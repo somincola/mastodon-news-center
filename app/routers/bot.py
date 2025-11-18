@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
@@ -9,6 +10,8 @@ from app.utils import render_template
 from app.config import settings
 from app.mastodon_client import MastodonClient
 from app.scheduler import reload_jobs
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/bots", tags=["bots"])
 admin_router = APIRouter(prefix="/admin/bots", tags=["admin-bots"])
@@ -309,6 +312,59 @@ async def test_bot_post(bot_id: int, db: Session = Depends(get_db)):
         <body>
             <h1>测试失败</h1>
             <p>错误信息: {str(e)}</p>
+            <p><a href="/admin/bots/{bot_id}">返回 Bot 详情</a></p>
+        </body>
+        </html>
+        """, status_code=500)
+
+
+@admin_router.get("/{bot_id}/preview")
+async def preview_bot_content(bot_id: int, request: Request, db: Session = Depends(get_db)):
+    """
+    预览 Bot 将要发布的内容（不实际发布）
+    """
+    from sqlalchemy.orm import joinedload
+    
+    bot = db.query(Bot).options(joinedload(Bot.feeds)).filter(Bot.id == bot_id).first()
+    if not bot:
+        raise HTTPException(status_code=404, detail="Bot not found")
+    
+    try:
+        # 导入新闻抓取函数
+        from app.news_fetcher import fetch_and_format_news
+        
+        # 抓取并格式化新闻（不发布）
+        news_items, formatted_text = await fetch_and_format_news(bot, db)
+        
+        # 统计信息
+        stats = {
+            "total_items": len(news_items),
+            "char_count": len(formatted_text),
+            "enabled_feeds": len([f for f in bot.feeds if f.enabled]),
+            "ai_enabled": bot.use_ai
+        }
+        
+        return render_template(
+            "bot_preview.html",
+            request,
+            bot=bot,
+            news_items=news_items,
+            formatted_text=formatted_text,
+            stats=stats
+        )
+    except Exception as e:
+        import traceback
+        error_message = str(e)
+        error_traceback = traceback.format_exc()
+        logger.error(f"预览失败: {error_traceback}")
+        
+        return HTMLResponse(content=f"""
+        <html>
+        <head><title>预览失败</title></head>
+        <body>
+            <h1>预览失败</h1>
+            <p>错误信息: {error_message}</p>
+            <pre style="background: #f5f5f5; padding: 1rem; overflow: auto;">{error_traceback}</pre>
             <p><a href="/admin/bots/{bot_id}">返回 Bot 详情</a></p>
         </body>
         </html>

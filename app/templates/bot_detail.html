@@ -63,6 +63,15 @@
     </div>
     
     <div style="margin-top: 2rem;">
+        <h3>预览功能</h3>
+        <p>点击下方按钮预览本次将要发布的内容（不实际发布）。</p>
+        <a href="/admin/bots/{{ bot.id }}/preview" class="btn btn-primary">
+            📋 预览发布内容
+        </a>
+        <p><small>预览会抓取新闻并格式化，但不发布到 Mastodon。可用于测试和检查内容。</small></p>
+    </div>
+    
+    <div style="margin-top: 2rem;">
         <h3>测试功能</h3>
         <p>点击下方按钮测试 Bot 是否能正常发布消息到 Mastodon。</p>
         <form action="/admin/bots/{{ bot.id }}/test" method="post" style="display: inline;">

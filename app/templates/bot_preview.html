@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}预览发布内容 - {{ bot.name }} - Somincola News Center{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">预览发布内容 - {{ bot.name }}</h2>
+        <a href="/admin/bots/{{ bot.id }}" class="btn btn-primary">返回 Bot 详情</a>
+    </div>
+    
+    <!-- 统计信息 -->
+    <div style="margin-bottom: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+        <h3>统计信息</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+            <div>
+                <strong>新闻条数：</strong> {{ stats.total_items }} 条
+            </div>
+            <div>
+                <strong>字符数：</strong> {{ stats.char_count }} 字符
+            </div>
+            <div>
+                <strong>启用的 Feed：</strong> {{ stats.enabled_feeds }} 个
+            </div>
+            <div>
+                <strong>AI 摘要：</strong> {% if stats.ai_enabled %}启用{% else %}禁用{% endif %}
+            </div>
+        </div>
+    </div>
+    
+    {% if news_items %}
+    <!-- 新闻列表 -->
+    <div style="margin-bottom: 2rem;">
+        <h3>新闻列表（{{ stats.total_items }} 条）</h3>
+        <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 1rem;">
+            {% for item in news_items %}
+            <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #eee;">
+                <div style="font-weight: 600; margin-bottom: 0.5rem; color: #2c3e50;">
+                    {{ loop.index }}. {{ item.title }}
+                </div>
+                {% if item.link %}
+                <div style="margin-bottom: 0.5rem;">
+                    <a href="{{ item.link }}" target="_blank" style="color: #3498db; text-decoration: none;">
+                        {{ item.link }}
+                    </a>
+                </div>
+                {% endif %}
+                {% if item.feed_name %}
+                <div style="font-size: 0.85rem; color: #7f8c8d;">
+                    来源：{{ item.feed_name }}
+                </div>
+                {% endif %}
+                {% if item.summary %}
+                <div style="margin-top: 0.5rem; font-size: 0.9rem; color: #555; line-height: 1.5;">
+                    {{ item.summary[:200] }}{% if item.summary|length > 200 %}...{% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- 格式化后的内容预览 -->
+    <div style="margin-bottom: 2rem;">
+        <h3>Mastodon 帖子预览</h3>
+        <div style="background: #fff; border: 2px solid #3498db; border-radius: 8px; padding: 1.5rem; position: relative;">
+            <div style="position: absolute; top: -12px; left: 20px; background: #fff; padding: 0 0.5rem; color: #3498db; font-weight: 600;">
+                发布内容
+            </div>
+            <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.95rem; line-height: 1.6; margin: 0; color: #2c3e50;">{{ formatted_text }}</pre>
+        </div>
+        <div style="margin-top: 0.5rem; color: #7f8c8d; font-size: 0.9rem;">
+            <strong>字符数：</strong>{{ stats.char_count }} / 5000（Mastodon 单条帖子限制）
+        </div>
+    </div>
+    {% else %}
+    <!-- 没有新闻时的提示 -->
+    <div style="padding: 2rem; text-align: center; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
+        <h3 style="color: #856404; margin-bottom: 1rem;">⚠️ 没有获取到新闻</h3>
+        <p style="color: #856404; margin-bottom: 1rem;">
+            可能的原因：
+        </p>
+        <ul style="text-align: left; display: inline-block; color: #856404;">
+            <li>没有配置 RSS 源，或所有 RSS 源都已禁用</li>
+            <li>RSS 源无法访问或格式错误</li>
+            <li>所有新闻都被去重过滤掉了</li>
+        </ul>
+        <div style="margin-top: 1.5rem;">
+            <a href="/admin/feeds?bot_id={{ bot.id }}" class="btn btn-primary">管理 RSS 源</a>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- 操作按钮 -->
+    <div class="actions" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #eee;">
+        <a href="/admin/bots/{{ bot.id }}" class="btn btn-primary">返回 Bot 详情</a>
+        {% if news_items %}
+        <form action="/admin/bots/{{ bot.id }}/run" method="post" style="display: inline;">
+            <button type="submit" class="btn btn-success" onclick="return confirm('确定要发布此内容到 Mastodon 吗？')">
+                发布此内容
+            </button>
+        </form>
+        <a href="/admin/bots/{{ bot.id }}/preview" class="btn btn-primary">刷新预览</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

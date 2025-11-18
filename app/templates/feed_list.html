@@ -6,7 +6,9 @@
 <div class="card">
     <div class="card-header">
         <h2 class="card-title">Feed 管理</h2>
-        <a href="/admin/feeds/new{% if bot_id %}?bot_id={{ bot_id }}{% endif %}" class="btn btn-primary">添加新 Feed</a>
+        <div class="actions">
+            <a href="/admin/feeds/new{% if bot_id %}?bot_id={{ bot_id }}{% endif %}" class="btn btn-primary">添加新 Feed</a>
+        </div>
     </div>
 </div>
 

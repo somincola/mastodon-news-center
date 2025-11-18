@@ -6,7 +6,9 @@
 <div class="card">
     <div class="card-header">
         <h2 class="card-title">{% if feed %}编辑 Feed{% else %}创建新 Feed{% endif %}</h2>
-        <a href="/admin/feeds{% if bot_id %}?bot_id={{ bot_id }}{% endif %}" class="btn btn-primary">返回</a>
+        <div class="actions">
+            <a href="/admin/feeds{% if bot_id %}?bot_id={{ bot_id }}{% endif %}" class="btn btn-primary">返回</a>
+        </div>
     </div>
     
     <form method="post" action="{% if feed %}/admin/feeds/{{ feed.id }}{% else %}/admin/feeds{% endif %}">

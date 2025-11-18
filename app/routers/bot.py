@@ -106,54 +106,6 @@ async def delete_bot(bot_id: int, db: Session = Depends(get_db)):
 
 
 # Web UI 路由
-@admin_router.get("/")
-async def list_bots_web(request: Request, db: Session = Depends(get_db)):
-    """
-    Bot 列表页面
-    """
-    from sqlalchemy.orm import joinedload
-    from app.models import Feed, Run
-    
-    # 获取所有 Bot，并加载关联的 feeds
-    bots = db.query(Bot).options(joinedload(Bot.feeds)).all()
-    
-    # 批量查询所有 Bot 的最近运行记录（优化性能）
-    bot_ids = [bot.id for bot in bots]
-    latest_runs_dict = {}
-    
-    if bot_ids:
-        # 查询所有相关的运行记录，按 bot_id 和 started_at 排序
-        all_runs = db.query(Run).filter(
-            Run.bot_id.in_(bot_ids)
-        ).order_by(Run.bot_id, Run.started_at.desc()).all()
-        
-        # 为每个 Bot 获取最新的运行记录
-        current_bot_id = None
-        for run in all_runs:
-            if run.bot_id != current_bot_id:
-                latest_runs_dict[run.bot_id] = run
-                current_bot_id = run.bot_id
-    
-    # 为每个 Bot 获取统计信息
-    bots_with_stats = []
-    for bot in bots:
-        # 统计启用的 Feed 数量
-        enabled_feeds_count = len([f for f in bot.feeds if f.enabled])
-        total_feeds_count = len(bot.feeds)
-        
-        # 获取最近的运行记录（从字典中获取）
-        latest_run = latest_runs_dict.get(bot.id)
-        
-        bots_with_stats.append({
-            "bot": bot,
-            "enabled_feeds_count": enabled_feeds_count,
-            "total_feeds_count": total_feeds_count,
-            "latest_run": latest_run
-        })
-    
-    return render_template("bot_list.html", request, bots_with_stats=bots_with_stats)
-
-
 @admin_router.get("/new")
 async def new_bot(request: Request, db: Session = Depends(get_db)):
     from app.models import Template
@@ -173,7 +125,7 @@ async def get_bot_detail(bot_id: int, request: Request, db: Session = Depends(ge
     return render_template("bot_detail.html", request, bot=bot, templates=templates)
 
 
-@admin_router.post("/")
+@admin_router.post("/new")
 async def create_bot_web(
     request: Request,
     name: str = Form(...),

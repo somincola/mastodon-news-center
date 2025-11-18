@@ -6,7 +6,9 @@
 <div class="card">
     <div class="card-header">
         <h2 class="card-title">{% if template %}编辑模板{% else %}创建新模板{% endif %}</h2>
-        <a href="/admin/templates" class="btn btn-primary">返回模板列表</a>
+        <div class="actions">
+            <a href="/admin/templates" class="btn btn-primary">返回模板列表</a>
+        </div>
     </div>
     
     <form method="post" action="{% if template %}/admin/templates/{{ template.id }}{% else %}/admin/templates{% endif %}">
@@ -68,7 +70,7 @@
         <p style="color: #7f8c8d; margin-bottom: 1rem;">
             此模板需要使用真实的新闻数据才能预览效果。请在 Bot 详情页面的预览功能中测试模板效果。
         </p>
-        <a href="/admin/bots" class="btn btn-primary">前往 Bot 管理</a>
+        <a href="/admin/dashboard" class="btn btn-primary">返回 Dashboard</a>
     </div>
 </div>
 {% endif %}

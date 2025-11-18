@@ -177,13 +177,14 @@ def limit_items(news_items: List[NewsItem], max_items: int) -> List[NewsItem]:
     return news_items[:max_items]
 
 
-def format_news_for_mastodon(news_items: List[NewsItem], bot_name: str = "") -> str:
+def format_news_for_mastodon(news_items: List[NewsItem], bot_name: str = "", template_content: str | None = None) -> str:
     """
     将新闻项格式化为 Mastodon 帖子格式
     
     Args:
         news_items: 新闻项列表
         bot_name: Bot 名称
+        template_content: 可选的 Jinja2 模板内容（如果为 None，使用默认格式）
     
     Returns:
         格式化后的文本
@@ -191,6 +192,21 @@ def format_news_for_mastodon(news_items: List[NewsItem], bot_name: str = "") -> 
     if not news_items:
         return ""
     
+    # 如果提供了模板，使用模板渲染
+    if template_content:
+        try:
+            from jinja2 import Template as JinjaTemplate
+            template = JinjaTemplate(template_content)
+            return template.render(
+                bot_name=bot_name,
+                news_items=news_items,
+                items_count=len(news_items)
+            )
+        except Exception as e:
+            print(f"模板渲染失败: {str(e)}，使用默认格式")
+            # 如果模板渲染失败，fallback 到默认格式
+    
+    # 默认格式（不使用模板）
     lines = []
     
     # 添加标题（如果有）
@@ -215,13 +231,14 @@ def format_news_for_mastodon(news_items: List[NewsItem], bot_name: str = "") -> 
     return "\n".join(lines)
 
 
-async def fetch_and_format_news(bot: Bot, db: Session) -> tuple[List[NewsItem], str]:
+async def fetch_and_format_news(bot: Bot, db: Session, template_content: str | None = None) -> tuple[List[NewsItem], str]:
     """
     抓取、去重、限制条数并格式化为 Mastodon 帖子
     
     Args:
         bot: Bot 对象
         db: 数据库会话
+        template_content: 可选的模板内容（用于预览时临时切换模板）
     
     Returns:
         (新闻项列表, 格式化后的文本)
@@ -243,8 +260,14 @@ async def fetch_and_format_news(bot: Bot, db: Session) -> tuple[List[NewsItem], 
         except Exception as e:
             print(f"AI 摘要失败: {str(e)}，使用原标题")
     
-    # 5. 格式化为 Mastodon 帖子
-    formatted_text = format_news_for_mastodon(limited_news, bot.name)
+    # 5. 确定使用的模板内容
+    # 优先级：传入的 template_content > Bot 的模板 > 默认格式
+    final_template = template_content
+    if not final_template and bot.template and bot.template.enabled:
+        final_template = bot.template.content
+    
+    # 6. 格式化为 Mastodon 帖子
+    formatted_text = format_news_for_mastodon(limited_news, bot.name, final_template)
     
     return limited_news, formatted_text
 

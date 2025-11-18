@@ -50,6 +50,21 @@
             </label>
         </div>
         
+        <div class="form-group">
+            <label for="template_id">发帖模板（可选）</label>
+            <select id="template_id" name="template_id">
+                <option value="">无（使用默认格式）</option>
+                {% if templates %}
+                    {% for template in templates %}
+                    <option value="{{ template.id }}" {% if bot and bot.template_id == template.id %}selected{% endif %}>
+                        {{ template.name }}
+                    </option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+            <small>选择自定义模板来格式化发帖内容。留空则使用默认格式。可前往 <a href="/admin/templates">模板管理</a> 创建模板。</small>
+        </div>
+        
         <div class="actions">
             <button type="submit" class="btn btn-success">保存</button>
             <a href="/admin/dashboard" class="btn btn-primary">取消</a>

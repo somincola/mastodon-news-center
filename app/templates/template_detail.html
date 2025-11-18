@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}{% if template %}编辑模板{% else %}创建模板{% endif %} - Somincola News Center{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">{% if template %}编辑模板{% else %}创建新模板{% endif %}</h2>
+        <a href="/admin/templates" class="btn btn-primary">返回模板列表</a>
+    </div>
+    
+    <form method="post" action="{% if template %}/admin/templates/{{ template.id }}{% else %}/admin/templates{% endif %}">
+        <div class="form-group">
+            <label for="name">模板名称 *</label>
+            <input type="text" id="name" name="name" value="{{ template.name if template else '' }}" required maxlength="200">
+            <small>模板的唯一标识名称</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="description">模板描述</label>
+            <textarea id="description" name="description" rows="2" maxlength="500">{{ template.description if template else '' }}</textarea>
+            <small>描述此模板的用途和特点（可选）</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="content">模板内容 *</label>
+            <textarea id="content" name="content" rows="15" required style="font-family: 'Courier New', monospace;">{{ template.content if template else '' }}</textarea>
+            <small>
+                使用 Jinja2 模板语法。可用变量：
+                <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
+                    <li><code>bot_name</code> - Bot 名称</li>
+                    <li><code>news_items</code> - 新闻列表</li>
+                    <li><code>items_count</code> - 新闻条数</li>
+                    <li>每个新闻项：<code>item.title</code>, <code>item.link</code>, <code>item.summary</code>, <code>item.feed_name</code></li>
+                </ul>
+                <strong>示例模板：</strong>
+                <pre style="background: #f5f5f5; padding: 0.5rem; margin-top: 0.5rem; font-size: 0.85rem; overflow-x: auto;">{% if bot_name %}📰 {{ bot_name }} 新闻简报
+
+{% endif %}{% for item in news_items %}{{ loop.index }}. {{ item.title }}
+{{ item.link }}{% if not loop.last %}
+
+{% endif %}{% endfor %}</pre>
+            </small>
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="enabled" {% if template and template.enabled or not template %}checked{% endif %}>
+                启用
+            </label>
+            <small>禁用的模板不能被 Bot 使用</small>
+        </div>
+        
+        <div class="actions">
+            <button type="submit" class="btn btn-success">保存</button>
+            <a href="/admin/templates" class="btn btn-primary">取消</a>
+        </div>
+    </form>
+</div>
+
+{% if template %}
+<!-- 预览区域 -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">模板预览</h3>
+    </div>
+    <div style="padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+        <p style="color: #7f8c8d; margin-bottom: 1rem;">
+            此模板需要使用真实的新闻数据才能预览效果。请在 Bot 详情页面的预览功能中测试模板效果。
+        </p>
+        <a href="/admin/bots" class="btn btn-primary">前往 Bot 管理</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

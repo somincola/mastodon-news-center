@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Request, Form
+from fastapi import APIRouter, Depends, HTTPException, Request, Form, Query
 from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -155,16 +155,22 @@ async def list_bots_web(request: Request, db: Session = Depends(get_db)):
 
 
 @admin_router.get("/new")
-async def new_bot(request: Request):
-    return render_template("bot_detail.html", request, bot=None)
+async def new_bot(request: Request, db: Session = Depends(get_db)):
+    from app.models import Template
+    # 获取所有启用的模板
+    templates = db.query(Template).filter(Template.enabled == True).all()
+    return render_template("bot_detail.html", request, bot=None, templates=templates)
 
 
 @admin_router.get("/{bot_id}")
 async def get_bot_detail(bot_id: int, request: Request, db: Session = Depends(get_db)):
+    from app.models import Template
     bot = db.query(Bot).filter(Bot.id == bot_id).first()
     if not bot:
         raise HTTPException(status_code=404, detail="Bot not found")
-    return render_template("bot_detail.html", request, bot=bot)
+    # 获取所有启用的模板
+    templates = db.query(Template).filter(Template.enabled == True).all()
+    return render_template("bot_detail.html", request, bot=bot, templates=templates)
 
 
 @admin_router.post("/")
@@ -177,6 +183,7 @@ async def create_bot_web(
     max_items: int = Form(5),
     enabled: bool = Form(False),
     use_ai: bool = Form(False),
+    template_id: Optional[int] = Form(None),
     db: Session = Depends(get_db)
 ):
     # 输入验证
@@ -217,6 +224,14 @@ async def create_bot_web(
                 except (ValueError, IndexError):
                     raise HTTPException(status_code=400, detail=f"时间格式错误: {time_str}，请使用 HH:MM 格式（例如：09:00）")
     
+    # 验证 template_id（如果提供）
+    template_id_value = None
+    if template_id:
+        from app.models import Template
+        template = db.query(Template).filter(Template.id == template_id, Template.enabled == True).first()
+        if template:
+            template_id_value = template_id
+    
     bot = Bot(
         name=name,
         mastodon_token=mastodon_token,
@@ -224,7 +239,8 @@ async def create_bot_web(
         enabled=enabled,
         schedule_times=times_list,
         max_items=max_items,
-        use_ai=use_ai
+        use_ai=use_ai,
+        template_id=template_id_value
     )
     db.add(bot)
     db.commit()
@@ -243,6 +259,7 @@ async def update_bot_web(
     max_items: int = Form(5),
     enabled: bool = Form(False),
     use_ai: bool = Form(False),
+    template_id: Optional[int] = Form(None),
     db: Session = Depends(get_db)
 ):
     bot = db.query(Bot).filter(Bot.id == bot_id).first()
@@ -283,6 +300,14 @@ async def update_bot_web(
                 except (ValueError, IndexError):
                     raise HTTPException(status_code=400, detail=f"时间格式错误: {time_str}，请使用 HH:MM 格式（例如：09:00）")
     
+    # 验证 template_id（如果提供）
+    template_id_value = None
+    if template_id:
+        from app.models import Template
+        template = db.query(Template).filter(Template.id == template_id, Template.enabled == True).first()
+        if template:
+            template_id_value = template_id
+    
     bot.name = name
     bot.mastodon_token = mastodon_token
     bot.mastodon_account = mastodon_account
@@ -290,6 +315,7 @@ async def update_bot_web(
     bot.schedule_times = times_list
     bot.max_items = max_items
     bot.use_ai = use_ai
+    bot.template_id = template_id_value
     
     db.commit()
     db.refresh(bot)
@@ -367,29 +393,57 @@ async def test_bot_post(bot_id: int, db: Session = Depends(get_db)):
 
 
 @admin_router.get("/{bot_id}/preview")
-async def preview_bot_content(bot_id: int, request: Request, db: Session = Depends(get_db)):
+async def preview_bot_content(
+    bot_id: int, 
+    request: Request, 
+    template_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db)
+):
     """
     预览 Bot 将要发布的内容（不实际发布）
+    
+    Args:
+        bot_id: Bot ID
+        template_id: 可选的模板 ID（用于临时切换模板预览）
     """
     from sqlalchemy.orm import joinedload
     
-    bot = db.query(Bot).options(joinedload(Bot.feeds)).filter(Bot.id == bot_id).first()
+    bot = db.query(Bot).options(joinedload(Bot.feeds), joinedload(Bot.template)).filter(Bot.id == bot_id).first()
     if not bot:
         raise HTTPException(status_code=404, detail="Bot not found")
     
     try:
-        # 导入新闻抓取函数
+        # 导入新闻抓取函数和模板模型
         from app.news_fetcher import fetch_and_format_news
+        from app.models import Template
+        
+        # 确定使用的模板内容（优先级：URL 参数 > Bot 的模板 > 默认格式）
+        template_content = None
+        selected_template = None
+        
+        if template_id:
+            # 如果提供了 template_id，使用该模板
+            selected_template = db.query(Template).filter(Template.id == template_id).first()
+            if selected_template and selected_template.enabled:
+                template_content = selected_template.content
+        elif bot.template and bot.template.enabled:
+            # 使用 Bot 配置的模板
+            selected_template = bot.template
+            template_content = bot.template.content
+        
+        # 获取所有启用的模板（用于下拉框）
+        all_templates = db.query(Template).filter(Template.enabled == True).all()
         
         # 抓取并格式化新闻（不发布）
-        news_items, formatted_text = await fetch_and_format_news(bot, db)
+        news_items, formatted_text = await fetch_and_format_news(bot, db, template_content)
         
         # 统计信息
         stats = {
             "total_items": len(news_items),
             "char_count": len(formatted_text),
             "enabled_feeds": len([f for f in bot.feeds if f.enabled]),
-            "ai_enabled": bot.use_ai
+            "ai_enabled": bot.use_ai,
+            "template_used": selected_template.name if selected_template else "默认格式"
         }
         
         return render_template(
@@ -398,7 +452,9 @@ async def preview_bot_content(bot_id: int, request: Request, db: Session = Depen
             bot=bot,
             news_items=news_items,
             formatted_text=formatted_text,
-            stats=stats
+            stats=stats,
+            all_templates=all_templates,
+            selected_template_id=selected_template.id if selected_template else None
         )
     except Exception as e:
         import traceback

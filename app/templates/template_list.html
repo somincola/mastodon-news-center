@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}模板管理 - Somincola News Center{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">模板管理</h2>
+        <a href="/admin/templates/new" class="btn btn-success">创建新模板</a>
+        <a href="/admin/dashboard" class="btn btn-primary">返回 Dashboard</a>
+    </div>
+</div>
+
+{% if templates %}
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>名称</th>
+                <th>描述</th>
+                <th>状态</th>
+                <th>创建时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for template in templates %}
+            <tr>
+                <td>{{ template.id }}</td>
+                <td>
+                    <a href="/admin/templates/{{ template.id }}" style="font-weight: 600; color: #2c3e50; text-decoration: none;">
+                        {{ template.name }}
+                    </a>
+                </td>
+                <td>
+                    {% if template.description %}
+                        <span title="{{ template.description }}">{{ template.description[:50] }}{% if template.description|length > 50 %}...{% endif %}</span>
+                    {% else %}
+                        <span style="color: #999;">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge {% if template.enabled %}badge-success{% else %}badge-danger{% endif %}">
+                        {% if template.enabled %}启用{% else %}禁用{% endif %}
+                    </span>
+                </td>
+                <td>{{ template.created_at.strftime('%Y-%m-%d %H:%M') if template.created_at else '-' }}</td>
+                <td>
+                    <div class="actions" style="gap: 0.25rem;">
+                        <a href="/admin/templates/{{ template.id }}" class="btn btn-primary btn-sm">编辑</a>
+                        <form action="/admin/templates/{{ template.id }}/delete" method="post" style="display: inline;">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('确定要删除此模板吗？')">删除</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card">
+    <div style="text-align: center; padding: 2rem;">
+        <h3>还没有创建任何模板</h3>
+        <p style="color: #7f8c8d; margin: 1rem 0;">创建模板来自定义发帖内容的格式。</p>
+        <a href="/admin/templates/new" class="btn btn-success">创建新模板</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

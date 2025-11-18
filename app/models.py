@@ -4,6 +4,20 @@ from sqlalchemy.sql import func
 from app.database import Base
 
 
+class Template(Base):
+    __tablename__ = "templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(200), nullable=False, unique=True)
+    content = Column(Text, nullable=False)  # Jinja2 模板内容
+    description = Column(Text, nullable=True)  # 模板描述
+    enabled = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    bots = relationship("Bot", back_populates="template")
+
+
 class Bot(Base):
     __tablename__ = "bots"
 
@@ -15,9 +29,11 @@ class Bot(Base):
     schedule_times = Column(JSON, default=list, nullable=False)  # e.g. ["09:00", "18:00"]
     max_items = Column(Integer, default=5, nullable=False)
     use_ai = Column(Boolean, default=False, nullable=False)
+    template_id = Column(Integer, ForeignKey("templates.id"), nullable=True)  # 可选的模板 ID
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    template = relationship("Template", back_populates="bots")
     feeds = relationship("Feed", back_populates="bot", cascade="all, delete-orphan")
     runs = relationship("Run", back_populates="bot", cascade="all, delete-orphan")
 

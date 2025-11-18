@@ -29,8 +29,9 @@ async def execute_bot_task(bot_id: int):
     started_at = datetime.utcnow()
     
     try:
-        # 获取 Bot
-        bot = db.query(Bot).filter(Bot.id == bot_id).first()
+        # 获取 Bot（包括模板关系）
+        from sqlalchemy.orm import joinedload
+        bot = db.query(Bot).options(joinedload(Bot.template)).filter(Bot.id == bot_id).first()
         if not bot:
             logger.error(f"Bot {bot_id} 不存在")
             return

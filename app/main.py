@@ -66,6 +66,9 @@ app.include_router(feed.router)
 app.include_router(feed.admin_router)
 app.include_router(runlog.router)
 app.include_router(runlog.admin_router)
+from app.routers import template
+app.include_router(template.router)
+app.include_router(template.admin_router)
 
 
 @app.get("/", response_class=HTMLResponse)

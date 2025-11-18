@@ -135,6 +135,22 @@ async def create_feed_web(
     max_per_run: int = Form(10),
     db: Session = Depends(get_db)
 ):
+    # 输入验证
+    name = name.strip()
+    if not name or len(name) > 200:
+        raise HTTPException(status_code=400, detail="名称不能为空且长度不能超过200字符")
+    
+    url = url.strip()
+    if not url or len(url) > 500:
+        raise HTTPException(status_code=400, detail="URL 不能为空且长度不能超过500字符")
+    
+    # 验证 URL 格式
+    if not url.startswith(('http://', 'https://')):
+        raise HTTPException(status_code=400, detail="URL 必须以 http:// 或 https:// 开头")
+    
+    if max_per_run < 1 or max_per_run > 50:
+        raise HTTPException(status_code=400, detail="每次最大条数必须在1-50之间")
+    
     bot = db.query(Bot).filter(Bot.id == bot_id).first()
     if not bot:
         raise HTTPException(status_code=404, detail="Bot not found")
@@ -162,9 +178,29 @@ async def update_feed_web(
     max_per_run: int = Form(10),
     db: Session = Depends(get_db)
 ):
+    # 输入验证
+    name = name.strip()
+    if not name or len(name) > 200:
+        raise HTTPException(status_code=400, detail="名称不能为空且长度不能超过200字符")
+    
+    url = url.strip()
+    if not url or len(url) > 500:
+        raise HTTPException(status_code=400, detail="URL 不能为空且长度不能超过500字符")
+    
+    # 验证 URL 格式
+    if not url.startswith(('http://', 'https://')):
+        raise HTTPException(status_code=400, detail="URL 必须以 http:// 或 https:// 开头")
+    
+    if max_per_run < 1 or max_per_run > 50:
+        raise HTTPException(status_code=400, detail="每次最大条数必须在1-50之间")
+    
     feed = db.query(Feed).filter(Feed.id == feed_id).first()
     if not feed:
         raise HTTPException(status_code=404, detail="Feed not found")
+    
+    bot = db.query(Bot).filter(Bot.id == bot_id).first()
+    if not bot:
+        raise HTTPException(status_code=404, detail="Bot not found")
     
     feed.bot_id = bot_id
     feed.url = url

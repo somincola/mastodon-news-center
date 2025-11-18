@@ -128,12 +128,43 @@ async def create_bot_web(
     use_ai: bool = Form(False),
     db: Session = Depends(get_db)
 ):
+    # 输入验证
+    name = name.strip()
+    if not name or len(name) > 100:
+        raise HTTPException(status_code=400, detail="名称不能为空且长度不能超过100字符")
+    
+    mastodon_token = mastodon_token.strip()
+    if not mastodon_token or len(mastodon_token) > 500:
+        raise HTTPException(status_code=400, detail="Mastodon Token 不能为空且长度不能超过500字符")
+    
+    mastodon_account = mastodon_account.strip()
+    if not mastodon_account or len(mastodon_account) > 200:
+        raise HTTPException(status_code=400, detail="Mastodon 账号不能为空且长度不能超过200字符")
+    
+    if max_items < 1 or max_items > 20:
+        raise HTTPException(status_code=400, detail="最大新闻条数必须在1-20之间")
+    
     existing_bot = db.query(Bot).filter(Bot.name == name).first()
     if existing_bot:
         raise HTTPException(status_code=400, detail="Bot with this name already exists")
     
-    # 解析运行时间
-    times_list = [t.strip() for t in schedule_times.split("\n") if t.strip()] if schedule_times else []
+    # 解析并验证运行时间
+    times_list = []
+    if schedule_times:
+        for time_str in schedule_times.split("\n"):
+            time_str = time_str.strip()
+            if time_str:
+                # 验证时间格式 (HH:MM)
+                try:
+                    parts = time_str.split(":")
+                    if len(parts) != 2:
+                        raise ValueError("时间格式错误")
+                    hour, minute = int(parts[0]), int(parts[1])
+                    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+                        raise ValueError("时间超出范围")
+                    times_list.append(time_str)
+                except (ValueError, IndexError):
+                    raise HTTPException(status_code=400, detail=f"时间格式错误: {time_str}，请使用 HH:MM 格式（例如：09:00）")
     
     bot = Bot(
         name=name,
@@ -167,8 +198,39 @@ async def update_bot_web(
     if not bot:
         raise HTTPException(status_code=404, detail="Bot not found")
     
-    # 解析运行时间
-    times_list = [t.strip() for t in schedule_times.split("\n") if t.strip()] if schedule_times else []
+    # 输入验证
+    name = name.strip()
+    if not name or len(name) > 100:
+        raise HTTPException(status_code=400, detail="名称不能为空且长度不能超过100字符")
+    
+    mastodon_token = mastodon_token.strip()
+    if not mastodon_token or len(mastodon_token) > 500:
+        raise HTTPException(status_code=400, detail="Mastodon Token 不能为空且长度不能超过500字符")
+    
+    mastodon_account = mastodon_account.strip()
+    if not mastodon_account or len(mastodon_account) > 200:
+        raise HTTPException(status_code=400, detail="Mastodon 账号不能为空且长度不能超过200字符")
+    
+    if max_items < 1 or max_items > 20:
+        raise HTTPException(status_code=400, detail="最大新闻条数必须在1-20之间")
+    
+    # 解析并验证运行时间
+    times_list = []
+    if schedule_times:
+        for time_str in schedule_times.split("\n"):
+            time_str = time_str.strip()
+            if time_str:
+                # 验证时间格式 (HH:MM)
+                try:
+                    parts = time_str.split(":")
+                    if len(parts) != 2:
+                        raise ValueError("时间格式错误")
+                    hour, minute = int(parts[0]), int(parts[1])
+                    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+                        raise ValueError("时间超出范围")
+                    times_list.append(time_str)
+                except (ValueError, IndexError):
+                    raise HTTPException(status_code=400, detail=f"时间格式错误: {time_str}，请使用 HH:MM 格式（例如：09:00）")
     
     bot.name = name
     bot.mastodon_token = mastodon_token

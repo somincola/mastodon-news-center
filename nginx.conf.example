@@ -1,0 +1,146 @@
+# Mastodon News Center Nginx 配置示例
+# 
+# 使用方法：
+# 1. 复制此文件到 Nginx 配置目录：
+#    cp nginx.conf.example /etc/nginx/sites-available/mastodon-news-center
+# 
+# 2. 编辑配置文件，替换以下内容：
+#    - your-domain.com → 你的域名
+# 
+# 3. 创建符号链接（Ubuntu/Debian）：
+#    ln -s /etc/nginx/sites-available/mastodon-news-center /etc/nginx/sites-enabled/
+# 
+# 4. 测试配置：
+#    nginx -t
+# 
+# 5. 重载 Nginx：
+#    systemctl reload nginx
+# 
+# 6. 配置 HTTPS（使用 Let's Encrypt）：
+#    certbot --nginx -d your-domain.com
+
+# HTTP 服务器（用于重定向到 HTTPS）
+server {
+    listen 80;
+    server_name your-domain.com;  # 替换为你的域名
+    
+    # 重定向 HTTP 到 HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+# HTTPS 服务器
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;  # 替换为你的域名
+
+    # SSL 证书路径（Let's Encrypt）
+    # Certbot 会自动配置这些路径
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+
+    # SSL 配置（安全最佳实践）
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5:!RC4;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    ssl_session_tickets off;
+
+    # HSTS（HTTP Strict Transport Security）
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # 安全头部
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # 客户端最大请求体大小（用于上传配置等）
+    client_max_body_size 10M;
+
+    # 超时设置
+    proxy_connect_timeout 60s;
+    proxy_send_timeout 60s;
+    proxy_read_timeout 60s;
+
+    # 代理到应用（主要路径）
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        
+        # WebSocket 支持（如果需要）
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        # 缓冲设置
+        proxy_buffering off;
+        proxy_request_buffering off;
+    }
+
+    # 静态文件缓存（优化性能）
+    location /static/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        
+        # 缓存设置
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        
+        # 压缩
+        gzip on;
+        gzip_types text/css text/javascript application/javascript application/json;
+    }
+
+    # 日志
+    access_log /var/log/nginx/mastodon-news-center.access.log;
+    error_log /var/log/nginx/mastodon-news-center.error.log;
+
+    # 禁止访问隐藏文件
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+}
+
+# 如果还没有配置 HTTPS，可以使用以下 HTTP 配置（临时）
+# ⚠️ 注意：生产环境必须使用 HTTPS！
+# 
+# server {
+#     listen 80;
+#     server_name your-domain.com;  # 替换为你的域名
+# 
+#     client_max_body_size 10M;
+# 
+#     location / {
+#         proxy_pass http://127.0.0.1:8000;
+#         proxy_set_header Host $host;
+#         proxy_set_header X-Real-IP $remote_addr;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+#         
+#         proxy_http_version 1.1;
+#         proxy_set_header Upgrade $http_upgrade;
+#         proxy_set_header Connection "upgrade";
+#         
+#         proxy_connect_timeout 60s;
+#         proxy_send_timeout 60s;
+#         proxy_read_timeout 60s;
+#     }
+# 
+#     location /static/ {
+#         proxy_pass http://127.0.0.1:8000;
+#         proxy_set_header Host $host;
+#         expires 30d;
+#         add_header Cache-Control "public, immutable";
+#     }
+# 
+#     access_log /var/log/nginx/mastodon-news-center.access.log;
+#     error_log /var/log/nginx/mastodon-news-center.error.log;
+# }
+

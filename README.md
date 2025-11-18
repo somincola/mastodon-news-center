@@ -25,6 +25,10 @@
 
 ## 快速开始
 
+### 本地开发
+
+适用于本地开发环境（Docker Desktop）。
+
 ### 前置要求
 
 - Docker Desktop（已安装并运行）
@@ -99,6 +103,53 @@ docker-compose ps
    - 模板变量：`bot_name`、`news_items`、`items_count`
 4. **添加 RSS 源**：在 Bot 详情页面添加 RSS 源 URL
 5. **预览内容**：在 Bot 详情页面点击"预览发布内容"查看将要发布的内容
+
+## 生产环境部署
+
+### 生产部署指南
+
+📚 **详细的生产环境部署文档请查看：[DEPLOYMENT.md](DEPLOYMENT.md)**
+
+生产部署包括：
+- 服务器准备和配置
+- Docker 和 Docker Compose 安装
+- 环境变量配置
+- Nginx 反向代理配置
+- HTTPS/SSL 证书配置（Let's Encrypt）
+- 防火墙配置
+- 自动启动配置
+- 备份脚本配置
+- 监控和维护
+
+### 快速部署脚本
+
+项目提供了自动化部署脚本，可以快速完成基础部署：
+
+```bash
+# 在服务器上克隆项目后
+cd mastodon-news-center
+sudo bash deploy.sh
+```
+
+脚本会自动：
+- 安装 Docker 和 Docker Compose
+- 配置环境变量
+- 启动服务
+- 验证部署
+
+### Nginx 配置示例
+
+项目提供了 Nginx 配置示例文件：`nginx.conf.example`
+
+配置步骤：
+1. 复制配置文件：`cp nginx.conf.example /etc/nginx/sites-available/mastodon-news-center`
+2. 编辑配置文件，替换域名
+3. 启用配置：`ln -s /etc/nginx/sites-available/mastodon-news-center /etc/nginx/sites-enabled/`
+4. 测试配置：`nginx -t`
+5. 重载 Nginx：`systemctl reload nginx`
+6. 配置 HTTPS：`certbot --nginx -d your-domain.com`
+
+## 本地开发
 
 ### 5. 常用命令
 

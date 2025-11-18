@@ -21,6 +21,11 @@
 
 ## 快速开始
 
+### 前置要求
+
+- Docker Desktop（已安装并运行）
+- Git
+
 ### 1. 克隆项目
 
 ```bash
@@ -32,90 +37,143 @@ cd mastodon-news-center
 
 **⚠️ 重要：`.env.example` 文件只是示例模板，包含的是示例配置，请不要直接使用！**
 
-复制 `.env.example` 为 `.env` 并**必须修改**以下配置：
-
 ```bash
+# 复制示例配置文件
 cp .env.example .env
 ```
 
-然后编辑 `.env` 文件，**务必修改**以下敏感信息：
+**本地开发**：可以保持默认配置。
 
-#### 必须修改的配置项：
+**生产环境**：必须修改 `.env` 文件中的数据库密码为强密码（至少16位，包含大小写字母、数字、特殊字符）。
 
-1. **数据库密码**（生产环境必需）：
-   ```env
-   POSTGRES_PASSWORD=your_strong_password_here  # ⚠️ 请使用强密码（至少16位，包含大小写字母、数字、特殊字符）
-   ```
+#### 主要配置项：
 
-2. **数据库连接字符串**（同步修改）：
-   ```env
-   DATABASE_URL=postgresql://somincola:your_strong_password_here@localhost:5432/somincola_news
-   ```
+```env
+# 数据库密码（生产环境必须修改！）
+POSTGRES_PASSWORD=your_strong_password_here
 
-3. **Mastodon 配置**：
-   ```env
-   MASTODON_BASE_URL=https://m.somincola.org  # 替换为你的 Mastodon 实例地址
-   ```
+# Mastodon 实例地址
+MASTODON_BASE_URL=https://m.somincola.org
 
-4. **OpenAI API Key**（可选，如需使用 AI 摘要功能）：
-   ```env
-   OPENAI_API_KEY=sk-...  # 填写你的 OpenAI API Key
-   ```
-
-#### 可选修改的配置项：
-
-- `POSTGRES_USER`：数据库用户名（默认：somincola）
-- `POSTGRES_DB`：数据库名称（默认：somincola_news）
-- `APP_PORT`：应用端口（默认：8000）
+# OpenAI API Key（可选，用于 AI 摘要）
+OPENAI_API_KEY=sk-...
+```
 
 ### 3. 启动服务
 
 ```bash
-# 构建并启动所有服务
+# 构建并启动所有服务（首次运行会下载镜像）
 docker-compose up -d
 
 # 查看日志
 docker-compose logs -f
 
-# 停止服务
-docker-compose down
+# 查看服务状态
+docker-compose ps
 ```
 
-服务将在以下地址启动：
+启动成功后访问：
 
 - **Web 管理界面**：http://localhost:8000/admin
 - **API 文档**：http://localhost:8000/docs
 
-### 4. 首次配置 Bot
+### 4. 首次配置
 
-1. **访问管理界面**：打开浏览器访问 http://localhost:8000/admin
+1. **访问管理界面**：http://localhost:8000/admin
 2. **创建 Bot**：
-   - 点击"创建新 Bot"
-   - 填写 Bot 名称（例如：Daily、Tech、Finance）
-   - **填写 Mastodon Token**（在 Mastodon 实例中创建应用获取）
-   - 填写 Mastodon 账号（例如：@bot@m.somincola.org）
+   - 填写 Bot 名称、Mastodon Token 和账号
    - 配置运行时间（格式：HH:MM，每行一个，例如：`09:00`）
    - 设置最大新闻条数
-   - （可选）开启 AI 摘要功能
-3. **添加 RSS 源**：
-   - 在 Bot 详情页面点击"管理 Feeds"
-   - 添加 RSS 源 URL 和名称
-   - 设置每次最大抓取条数
+   - （可选）开启 AI 摘要
+3. **添加 RSS 源**：在 Bot 详情页面添加 RSS 源 URL
 
-### 5. 测试功能
+### 5. 常用命令
 
-在 Bot 详情页面，可以使用以下功能测试：
+```bash
+# 停止服务（保留数据）
+docker-compose stop
 
-- **发布测试消息**：测试 Mastodon API 连接是否正常
-- **立即执行任务**：手动触发一次任务执行（抓取新闻并发布）
+# 停止并删除容器（保留数据卷）
+docker-compose down
 
-### 6. 查看运行日志
+# 停止并删除所有（包括数据卷）
+docker-compose down -v
 
-在"运行日志"页面可以查看所有任务执行记录，包括：
-- 执行时间
-- 成功/失败状态
-- 新闻条数
-- 详细消息
+# 查看应用日志
+docker-compose logs -f app
+
+# 查看数据库日志
+docker-compose logs -f db
+
+# 重新构建镜像
+docker-compose build --no-cache
+```
+
+## 故障排除
+
+### 端口被占用
+
+如果 8000 端口被占用，修改 `.env` 中的 `APP_PORT`：
+
+```env
+APP_PORT=8001
+```
+
+然后访问：http://localhost:8001/admin
+
+### Docker 镜像拉取失败
+
+如果遇到网络问题无法拉取 Docker 镜像，可以配置镜像加速器：
+
+**macOS Docker Desktop：**
+
+1. 打开 Docker Desktop → Settings → Docker Engine
+2. 添加镜像加速器配置：
+
+```json
+{
+  "registry-mirrors": [
+    "https://docker.m.daocloud.io",
+    "https://dockerproxy.com",
+    "https://docker.nju.edu.cn"
+  ]
+}
+```
+
+3. 点击 "Apply & Restart"
+
+### 数据库连接失败
+
+检查数据库容器状态：
+
+```bash
+docker-compose ps db
+docker-compose logs db
+```
+
+确保数据库容器状态为 `healthy`。
+
+### 应用启动失败
+
+查看应用日志排查问题：
+
+```bash
+docker-compose logs app
+```
+
+常见问题：
+- 数据库未就绪：等待数据库容器变为 `healthy` 状态
+- 环境变量未配置：检查 `.env` 文件是否存在
+- 端口冲突：修改 `APP_PORT` 配置
+
+### 使用代理
+
+如果使用 Surge/Clash 等代理工具：
+
+1. 打开 Docker Desktop → Settings → Resources → Proxies
+2. 配置代理地址（例如：`http://127.0.0.1:6152`）
+3. 在 "No Proxy for" 中添加：`localhost,127.0.0.1`
+4. 点击 "Apply & Restart"
 
 ## 详细配置说明
 
@@ -217,17 +275,25 @@ OPENAI_API_KEY=sk-...  # 如需使用 AI 摘要功能，填写你的 API Key
 
 ## 开发
 
-### 本地开发
+### 本地开发（不使用 Docker 应用容器）
+
+如果你想在本地运行应用代码（支持热重载），只需使用 Docker 运行数据库：
 
 ```bash
-# 安装依赖
-pip install -r requirements.txt
-
-# 启动数据库
+# 启动数据库容器
 docker-compose up -d db
 
-# 运行应用
-uvicorn app.main:app --reload
+# 安装 Python 依赖
+pip install -r requirements.txt
+
+# 运行应用（代码修改会自动重载）
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**注意**：本地开发时，需要修改 `.env` 中的 `DATABASE_URL` 为：
+
+```env
+DATABASE_URL=postgresql://somincola:your_password@localhost:5432/somincola_news
 ```
 
 ## 许可证

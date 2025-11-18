@@ -2,12 +2,17 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    postgresql-client \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Install system dependencies (with retry mechanism)
+RUN apt-get update && \
+    (apt-get install -y --fix-missing \
+        gcc \
+        postgresql-client \
+        curl \
+    || (sleep 5 && apt-get update && apt-get install -y --fix-missing \
+        gcc \
+        postgresql-client \
+        curl)) && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .

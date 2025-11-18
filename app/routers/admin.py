@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Bot
-from app.main import render_template
+from app.utils import render_template
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 

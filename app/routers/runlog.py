@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from app.database import get_db
 from app.models import Run
-from app.main import render_template
+from app.utils import render_template
 
 router = APIRouter(prefix="/api/runs", tags=["runs"])
 admin_router = APIRouter(prefix="/admin/runs", tags=["admin-runs"])

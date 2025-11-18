@@ -3,7 +3,6 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
-from jinja2 import Environment, FileSystemLoader
 from app.database import init_db
 from app.routers import admin, bot, feed, runlog
 
@@ -43,13 +42,6 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 # 挂载静态文件
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-
-# 配置模板
-templates_env = Environment(loader=FileSystemLoader("app/templates"))
-
-def render_template(template_name: str, request: Request, **context):
-    template = templates_env.get_template(template_name)
-    return HTMLResponse(content=template.render(**context))
 
 # 初始化数据库和调度器
 @app.on_event("startup")

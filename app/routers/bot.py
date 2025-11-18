@@ -5,7 +5,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from app.database import get_db
 from app.models import Bot
-from app.main import render_template
+from app.utils import render_template
 from app.config import settings
 from app.mastodon_client import MastodonClient
 from app.scheduler import reload_jobs

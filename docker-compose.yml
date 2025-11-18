@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: somincola-news-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-somincola}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-somincola}
+      POSTGRES_DB: ${POSTGRES_DB:-somincola_news}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-somincola}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: somincola-news-app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./app:/app/app
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-somincola}:${POSTGRES_PASSWORD:-somincola}@db:5432/${POSTGRES_DB:-somincola_news}
+      - MASTODON_BASE_URL=${MASTODON_BASE_URL:-https://m.somincola.org}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+

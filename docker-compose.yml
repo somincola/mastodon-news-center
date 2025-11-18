@@ -5,8 +5,9 @@ services:
     image: postgres:15-alpine
     container_name: somincola-news-db
     environment:
+      # ⚠️ 请确保在 .env 文件中设置强密码！
       POSTGRES_USER: ${POSTGRES_USER:-somincola}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-somincola}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_in_production}
       POSTGRES_DB: ${POSTGRES_DB:-somincola_news}
     volumes:
       - postgres_data:/var/lib/postgresql/data

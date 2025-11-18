@@ -26,7 +26,8 @@ class MastodonClient:
         sensitive: bool = False,
         spoiler_text: Optional[str] = None,
         visibility: str = "public",
-        timeout: int = 30
+        timeout: int = 30,
+        max_length: int | None = None
     ) -> dict:
         """
         发布状态（发帖）
@@ -39,6 +40,7 @@ class MastodonClient:
             spoiler_text: 内容警告文本
             visibility: 可见性（public, unlisted, private, direct）
             timeout: 请求超时时间（秒）
+            max_length: 最大内容长度（默认 500，Mastodon 限制）
         
         Returns:
             API 响应数据（包含帖子信息）
@@ -47,6 +49,15 @@ class MastodonClient:
             httpx.HTTPStatusError: HTTP 错误
             Exception: 其他错误
         """
+        # 使用配置中的长度限制（如果未指定）
+        if max_length is None:
+            max_length = settings.mastodon_max_length
+        
+        # 检查内容长度
+        if len(status) > max_length:
+            from app.news_fetcher import truncate_content
+            status = truncate_content(status, max_length)
+        
         url = f"{self.api_url}/statuses"
         
         headers = {
@@ -84,8 +95,21 @@ class MastodonClient:
                 error_detail = e.response.json()
                 if "error" in error_detail:
                     error_msg += f": {error_detail['error']}"
+                # 对于 422 错误（验证失败），提供更详细的错误信息
+                if e.response.status_code == 422:
+                    if "error_description" in error_detail:
+                        error_msg += f" - {error_detail['error_description']}"
+                    elif "errors" in error_detail:
+                        errors = error_detail.get("errors", [])
+                        if errors:
+                            error_msg += f" - {errors[0]}"
             except:
                 error_msg += f": {e.response.text[:200]}"
+            
+            # 添加内容长度信息
+            if len(status) > max_length:
+                error_msg += f" (内容长度: {len(status)} 字符，超过限制 {max_length} 字符)"
+            
             raise Exception(error_msg)
         except Exception as e:
             raise Exception(f"发布失败: {str(e)}")

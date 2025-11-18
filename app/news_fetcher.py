@@ -5,6 +5,7 @@ from typing import List, Dict, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
 from app.models import Feed, Bot
+from app.config import settings
 
 
 class NewsItem:
@@ -177,7 +178,39 @@ def limit_items(news_items: List[NewsItem], max_items: int) -> List[NewsItem]:
     return news_items[:max_items]
 
 
-def format_news_for_mastodon(news_items: List[NewsItem], bot_name: str = "", template_content: str | None = None) -> str:
+def truncate_content(content: str, max_length: int) -> str:
+    """
+    截断内容到指定长度，确保在 Mastodon 限制内
+    
+    Args:
+        content: 原始内容
+        max_length: 最大长度（默认 500，Mastodon 限制）
+    
+    Returns:
+        截断后的内容
+    """
+    if len(content) <= max_length:
+        return content
+    
+    # 保留一些缓冲空间（480 字符），并尝试在最后一个换行符处截断
+    truncate_at = 480
+    truncated = content[:truncate_at]
+    
+    # 尝试在最后一个换行符处截断
+    last_newline = truncated.rfind('\n')
+    if last_newline > truncate_at * 0.7:  # 如果最后一个换行符在 70% 之后，在那里截断
+        truncated = truncated[:last_newline]
+    
+    # 移除末尾的空白行
+    truncated = truncated.rstrip()
+    
+    # 添加截断提示
+    truncated += "\n\n...（内容过长，已截断）"
+    
+    return truncated
+
+
+def format_news_for_mastodon(news_items: List[NewsItem], bot_name: str = "", template_content: str | None = None, max_length: int = None) -> str:
     """
     将新闻项格式化为 Mastodon 帖子格式
     
@@ -185,19 +218,22 @@ def format_news_for_mastodon(news_items: List[NewsItem], bot_name: str = "", tem
         news_items: 新闻项列表
         bot_name: Bot 名称
         template_content: 可选的 Jinja2 模板内容（如果为 None，使用默认格式）
+        max_length: 最大内容长度（默认 500，Mastodon 限制）
     
     Returns:
-        格式化后的文本
+        格式化后的文本（确保不超过 max_length）
     """
     if not news_items:
         return ""
+    
+    formatted_text = ""
     
     # 如果提供了模板，使用模板渲染
     if template_content:
         try:
             from jinja2 import Template as JinjaTemplate
             template = JinjaTemplate(template_content)
-            return template.render(
+            formatted_text = template.render(
                 bot_name=bot_name,
                 news_items=news_items,
                 items_count=len(news_items)
@@ -205,33 +241,45 @@ def format_news_for_mastodon(news_items: List[NewsItem], bot_name: str = "", tem
         except Exception as e:
             print(f"模板渲染失败: {str(e)}，使用默认格式")
             # 如果模板渲染失败，fallback 到默认格式
+            formatted_text = None
     
-    # 默认格式（不使用模板）
-    lines = []
-    
-    # 添加标题（如果有）
-    if bot_name:
-        lines.append(f"📰 {bot_name} 新闻简报")
-        lines.append("")
-    
-    # 添加每条新闻
-    for i, item in enumerate(news_items, 1):
-        # 标题
-        title_line = f"{i}. {item.title}"
-        lines.append(title_line)
+    # 如果模板渲染失败或没有模板，使用默认格式
+    if not formatted_text:
+        lines = []
         
-        # 链接
-        if item.link:
-            lines.append(item.link)
-        
-        # 空行（最后一条不添加）
-        if i < len(news_items):
+        # 添加标题（如果有）
+        if bot_name:
+            lines.append(f"📰 {bot_name} 新闻简报")
             lines.append("")
+        
+        # 添加每条新闻
+        for i, item in enumerate(news_items, 1):
+            # 标题
+            title_line = f"{i}. {item.title}"
+            lines.append(title_line)
+            
+            # 链接
+            if item.link:
+                lines.append(item.link)
+            
+            # 空行（最后一条不添加）
+            if i < len(news_items):
+                lines.append("")
+        
+        formatted_text = "\n".join(lines)
     
-    return "\n".join(lines)
+    # 使用配置中的长度限制（如果未指定）
+    if max_length is None:
+        max_length = settings.mastodon_max_length
+    
+    # 检查并截断内容
+    if len(formatted_text) > max_length:
+        formatted_text = truncate_content(formatted_text, max_length)
+    
+    return formatted_text
 
 
-async def fetch_and_format_news(bot: Bot, db: Session, template_content: str | None = None) -> tuple[List[NewsItem], str]:
+async def fetch_and_format_news(bot: Bot, db: Session, template_content: str | None = None, max_length: int | None = None) -> tuple[List[NewsItem], str]:
     """
     抓取、去重、限制条数并格式化为 Mastodon 帖子
     
@@ -239,6 +287,7 @@ async def fetch_and_format_news(bot: Bot, db: Session, template_content: str | N
         bot: Bot 对象
         db: 数据库会话
         template_content: 可选的模板内容（用于预览时临时切换模板）
+        max_length: 最大内容长度（默认使用配置中的 MASTODON_MAX_LENGTH，标准限制为 500）
     
     Returns:
         (新闻项列表, 格式化后的文本)
@@ -267,7 +316,11 @@ async def fetch_and_format_news(bot: Bot, db: Session, template_content: str | N
         final_template = bot.template.content
     
     # 6. 格式化为 Mastodon 帖子
-    formatted_text = format_news_for_mastodon(limited_news, bot.name, final_template)
+    # 使用配置中的长度限制（如果未指定）
+    if max_length is None:
+        max_length = settings.mastodon_max_length
+    
+    formatted_text = format_news_for_mastodon(limited_news, bot.name, final_template, max_length)
     
     return limited_news, formatted_text
 

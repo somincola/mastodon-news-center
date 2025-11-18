@@ -196,6 +196,7 @@ APP_PORT=8000  # Web 服务端口
 #### Mastodon 配置
 ```env
 MASTODON_BASE_URL=https://m.somincola.org  # 你的 Mastodon 实例地址
+MASTODON_MAX_LENGTH=500                    # Mastodon 帖子最大字符数（默认 500，标准 Mastodon 限制）
 ```
 
 #### OpenAI 配置（可选）
@@ -223,7 +224,13 @@ OPENAI_API_KEY=sk-...  # 如需使用 AI 摘要功能，填写你的 API Key
    - 需要配置 `OPENAI_API_KEY` 环境变量
    - 关闭时使用原标题
 
-4. **RSS 源管理**：
+4. **内容长度限制**：
+   - 系统会自动检查并截断超过 `MASTODON_MAX_LENGTH` 的内容
+   - 默认值为 500 字符（Mastodon 标准限制）
+   - 可在 `.env` 文件中修改 `MASTODON_MAX_LENGTH` 来自定义限制
+   - 内容过长时会自动在合适位置截断并添加提示
+
+5. **RSS 源管理**：
    - 为每个 Bot 添加多个 RSS 源
    - 每个源可设置名称、URL、每次最大抓取条数
    - 可单独启用/禁用某个源

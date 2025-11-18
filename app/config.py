@@ -7,11 +7,11 @@ class Settings(BaseSettings):
     # Database
     database_url: str = os.getenv(
         "DATABASE_URL",
-        "postgresql://somincola:somincola@localhost:5432/somincola_news"
+        "postgresql://mastodon_news:mastodon_news@localhost:5432/mastodon_news"
     )
     
     # Mastodon
-    mastodon_base_url: str = os.getenv("MASTODON_BASE_URL", "https://m.somincola.org")
+    mastodon_base_url: str = os.getenv("MASTODON_BASE_URL", "https://your-instance.com")
     mastodon_max_length: int = int(os.getenv("MASTODON_MAX_LENGTH", "500"))  # Mastodon 帖子最大字符数（默认 500）
     
     # OpenAI (Optional)

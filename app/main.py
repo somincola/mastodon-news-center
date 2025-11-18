@@ -13,7 +13,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Somincola News Center")
+app = FastAPI(title="Mastodon News Center")
 
 # 全局异常处理
 @app.exception_handler(RequestValidationError)
@@ -77,12 +77,12 @@ async def root():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Somincola News Center</title>
+        <title>Mastodon News Center</title>
         <meta charset="utf-8">
     </head>
     <body>
-        <h1>Somincola News Center</h1>
-        <p>Welcome to Somincola News Center</p>
+        <h1>Mastodon News Center</h1>
+        <p>Welcome to Mastodon News Center</p>
         <p><a href="/admin">Go to Admin</a></p>
     </body>
     </html>

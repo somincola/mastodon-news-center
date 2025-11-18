@@ -1,25 +1,25 @@
 services:
   db:
     image: postgres:15-alpine
-    container_name: somincola-news-db
+    container_name: mastodon-news-db
     environment:
       # ⚠️ 请确保在 .env 文件中设置强密码！
-      POSTGRES_USER: ${POSTGRES_USER:-somincola}
+      POSTGRES_USER: ${POSTGRES_USER:-mastodon_news}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_in_production}
-      POSTGRES_DB: ${POSTGRES_DB:-somincola_news}
+      POSTGRES_DB: ${POSTGRES_DB:-mastodon_news}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-somincola} -d ${POSTGRES_DB:-somincola_news}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mastodon_news} -d ${POSTGRES_DB:-mastodon_news}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   app:
     build: .
-    container_name: somincola-news-app
+    container_name: mastodon-news-app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level info
     volumes:
       - ./app:/app/app
@@ -27,8 +27,8 @@ services:
     ports:
       - "${APP_PORT:-8000}:8000"
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-somincola}:${POSTGRES_PASSWORD:-changeme_in_production}@db:5432/${POSTGRES_DB:-somincola_news}
-      - MASTODON_BASE_URL=${MASTODON_BASE_URL:-https://m.somincola.org}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-mastodon_news}:${POSTGRES_PASSWORD:-changeme_in_production}@db:5432/${POSTGRES_DB:-mastodon_news}
+      - MASTODON_BASE_URL=${MASTODON_BASE_URL:-https://your-instance.com}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - PYTHONUNBUFFERED=1
     depends_on:

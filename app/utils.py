@@ -33,7 +33,7 @@ def extract_account_name(mastodon_account: str) -> str | None:
     从 Mastodon 账号中提取账号名称
     
     Args:
-        mastodon_account: Mastodon 账号（例如："@daily@m.somincola.org" 或 "daily"）
+        mastodon_account: Mastodon 账号（例如："@daily@your-instance.com" 或 "daily"）
     
     Returns:
         账号名称（例如："daily"），如果没有找到则返回 None
@@ -56,10 +56,10 @@ def extract_instance_domain(mastodon_account: str) -> str | None:
     从 Mastodon 账号中提取实例域名
     
     Args:
-        mastodon_account: Mastodon 账号（例如："@daily@m.somincola.org" 或 "daily"）
+        mastodon_account: Mastodon 账号（例如："@daily@your-instance.com" 或 "daily"）
     
     Returns:
-        实例域名（例如："m.somincola.org"），如果没有找到则返回 None
+        实例域名（例如："your-instance.com"），如果没有找到则返回 None
     """
     if not mastodon_account:
         return None
@@ -91,7 +91,7 @@ def build_post_url(post_id: str, mastodon_account: str, base_url: str | None = N
     
     Args:
         post_id: 帖子 ID
-        mastodon_account: Mastodon 账号（例如："@daily@m.somincola.org" 或 "daily"）
+        mastodon_account: Mastodon 账号（例如："@daily@your-instance.com" 或 "daily"）
         base_url: Mastodon 实例基础 URL（可选，优先级最高）
     
     Returns:

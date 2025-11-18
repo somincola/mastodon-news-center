@@ -1,4 +1,4 @@
-# Somincola News Center
+# Mastodon News Center
 
 统一管理多个 Mastodon 新闻 Bot（Daily / Tech / Finance）的后台管理系统。
 
@@ -57,7 +57,7 @@ cp .env.example .env
 POSTGRES_PASSWORD=your_strong_password_here
 
 # Mastodon 实例地址
-MASTODON_BASE_URL=https://m.somincola.org
+MASTODON_BASE_URL=https://your-instance.com
 
 # Mastodon 帖子最大字符数（默认 500，标准 Mastodon 限制）
 MASTODON_MAX_LENGTH=500
@@ -212,11 +212,11 @@ docker-compose logs app
 
 #### 数据库配置
 ```env
-POSTGRES_USER=somincola              # 数据库用户名
+POSTGRES_USER=mastodon_news          # 数据库用户名
 POSTGRES_PASSWORD=your_strong_password  # ⚠️ 数据库密码（必须修改！）
-POSTGRES_DB=somincola_news           # 数据库名称
+POSTGRES_DB=mastodon_news            # 数据库名称
 POSTGRES_PORT=5432                   # 数据库端口
-DATABASE_URL=postgresql://somincola:your_strong_password@localhost:5432/somincola_news
+DATABASE_URL=postgresql://mastodon_news:your_strong_password@localhost:5432/mastodon_news
 ```
 
 #### 应用配置
@@ -226,7 +226,7 @@ APP_PORT=8000  # Web 服务端口
 
 #### Mastodon 配置
 ```env
-MASTODON_BASE_URL=https://m.somincola.org  # 你的 Mastodon 实例地址
+MASTODON_BASE_URL=https://your-instance.com  # 你的 Mastodon 实例地址
 MASTODON_MAX_LENGTH=500                    # Mastodon 帖子最大字符数（默认 500，标准 Mastodon 限制）
 ```
 
@@ -365,7 +365,7 @@ OPENAI_API_KEY=sk-...  # 如需使用 AI 摘要功能，填写你的 API Key
 ### 生产环境部署前必须完成：
 
 1. **修改数据库密码**：
-   - `.env.example` 中的 `somincola` 只是示例密码
+   - `.env.example` 中的密码只是示例
    - 在 `.env` 文件中必须使用强密码（至少16位，包含大小写字母、数字、特殊字符）
    - 示例：`POSTGRES_PASSWORD=My$tr0ng!P@ssw0rd2024`
 
@@ -440,7 +440,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 **注意**：本地开发时，需要修改 `.env` 中的 `DATABASE_URL` 为：
 
 ```env
-DATABASE_URL=postgresql://somincola:your_password@localhost:5432/somincola_news
+DATABASE_URL=postgresql://mastodon_news:your_password@localhost:5432/mastodon_news
 ```
 
 ### 项目结构

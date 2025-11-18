@@ -11,7 +11,7 @@ class MastodonClient:
         初始化 Mastodon 客户端
         
         Args:
-            base_url: Mastodon 实例的基础 URL（例如：https://m.somincola.org）
+            base_url: Mastodon 实例的基础 URL（例如：https://your-instance.com）
             access_token: 访问令牌
         """
         self.base_url = base_url.rstrip('/')

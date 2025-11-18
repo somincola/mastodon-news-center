@@ -15,6 +15,13 @@ async def admin_root():
 
 @router.get("/dashboard")
 async def dashboard(request: Request, db: Session = Depends(get_db)):
+    from sqlalchemy.orm import joinedload
+    from app.models import Run
+    
     bots = db.query(Bot).all()
-    return render_template("dashboard.html", request, bots=bots)
+    
+    # 获取最近的运行日志（最多 10 条）
+    recent_runs = db.query(Run).options(joinedload(Run.bot)).order_by(Run.started_at.desc()).limit(10).all()
+    
+    return render_template("dashboard.html", request, bots=bots, recent_runs=recent_runs)
 

@@ -57,12 +57,49 @@ async def get_latest_run(bot_id: int, db: Session = Depends(get_db)):
 async def list_runs_web(
     request: Request,
     bot_id: Optional[int] = Query(None),
+    success: Optional[bool] = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
     from sqlalchemy.orm import joinedload
+    
+    # 构建查询
     query = db.query(Run).options(joinedload(Run.bot))
+    
+    # 筛选条件
     if bot_id:
         query = query.filter(Run.bot_id == bot_id)
-    runs = query.order_by(Run.started_at.desc()).limit(100).all()
-    return render_template("runlog_list.html", request, runs=runs, bot_id=bot_id)
+    if success is not None:
+        # 处理字符串 "true" 和 "false"
+        if isinstance(success, str):
+            success = success.lower() == "true"
+        query = query.filter(Run.success == success)
+    
+    # 获取总数
+    total = query.count()
+    
+    # 分页
+    offset = (page - 1) * per_page
+    runs = query.order_by(Run.started_at.desc()).offset(offset).limit(per_page).all()
+    
+    # 计算总页数
+    total_pages = (total + per_page - 1) // per_page if total > 0 else 1
+    
+    # 获取所有 bots（用于筛选）
+    from app.models import Bot
+    bots = db.query(Bot).all()
+    
+    return render_template(
+        "runlog_list.html",
+        request,
+        runs=runs,
+        bot_id=bot_id,
+        success=success,
+        page=page,
+        per_page=per_page,
+        total=total,
+        total_pages=total_pages,
+        bots=bots
+    )
 

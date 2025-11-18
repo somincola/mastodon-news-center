@@ -7,6 +7,44 @@
     <div class="card-header">
         <h2 class="card-title">运行日志</h2>
     </div>
+    
+    <!-- 筛选表单 -->
+    <form method="get" action="/admin/runs" style="margin-bottom: 1rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; align-items: end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="bot_id">Bot</label>
+                <select id="bot_id" name="bot_id">
+                    <option value="">全部</option>
+                    {% for bot in bots %}
+                    <option value="{{ bot.id }}" {% if bot_id and bot_id == bot.id %}selected{% endif %}>
+                        {{ bot.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="success">状态</label>
+                <select id="success" name="success">
+                    <option value="">全部</option>
+                    <option value="true" {% if success == True or success == "true" %}selected{% endif %}>成功</option>
+                    <option value="false" {% if success == False or success == "false" %}selected{% endif %}>失败</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="per_page">每页数量</label>
+                <select id="per_page" name="per_page">
+                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">筛选</button>
+        </div>
+    </form>
 </div>
 
 {% if bot_id %}
@@ -16,6 +54,10 @@
 {% endif %}
 
 <div class="card">
+    <div class="card-header">
+        <h3 class="card-title">运行记录 (共 {{ total }} 条)</h3>
+    </div>
+    
     <table class="table">
         <thead>
             <tr>
@@ -23,6 +65,7 @@
                 <th>Bot</th>
                 <th>开始时间</th>
                 <th>结束时间</th>
+                <th>耗时</th>
                 <th>状态</th>
                 <th>新闻条数</th>
                 <th>消息</th>
@@ -32,28 +75,63 @@
             {% for run in runs %}
             <tr>
                 <td>{{ run.id }}</td>
-                <td>{{ run.bot.name }}</td>
+                <td>
+                    <a href="/admin/bots/{{ run.bot.id }}">{{ run.bot.name }}</a>
+                </td>
                 <td>{{ run.started_at.strftime('%Y-%m-%d %H:%M:%S') if run.started_at else '-' }}</td>
                 <td>{{ run.finished_at.strftime('%Y-%m-%d %H:%M:%S') if run.finished_at else '-' }}</td>
+                <td>
+                    {% if run.started_at and run.finished_at %}
+                        {% set duration = (run.finished_at - run.started_at).total_seconds() %}
+                        {% if duration < 60 %}
+                            {{ "%.1f"|format(duration) }}秒
+                        {% else %}
+                            {{ "%.1f"|format(duration / 60) }}分钟
+                        {% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
                 <td>
                     <span class="badge {% if run.success %}badge-success{% else %}badge-danger{% endif %}">
                         {% if run.success %}成功{% else %}失败{% endif %}
                     </span>
                 </td>
                 <td>{{ run.items_count }}</td>
-                <td>{{ run.message[:100] if run.message else '-' }}...</td>
+                <td>
+                    {% if run.message %}
+                        <span title="{{ run.message }}">{{ run.message[:50] }}{% if run.message|length > 50 %}...{% endif %}</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
             
             {% if not runs %}
             <tr>
-                <td colspan="7" style="text-align: center; padding: 2rem;">
+                <td colspan="8" style="text-align: center; padding: 2rem;">
                     还没有运行记录。
                 </td>
             </tr>
             {% endif %}
         </tbody>
     </table>
+    
+    <!-- 分页 -->
+    {% if total_pages > 1 %}
+    <div style="margin-top: 1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
+        {% if page > 1 %}
+            <a href="?page={{ page - 1 }}{% if bot_id %}&bot_id={{ bot_id }}{% endif %}{% if success is not none %}&success={{ success }}{% endif %}&per_page={{ per_page }}" class="btn btn-primary">上一页</a>
+        {% endif %}
+        
+        <span>第 {{ page }} / {{ total_pages }} 页</span>
+        
+        {% if page < total_pages %}
+            <a href="?page={{ page + 1 }}{% if bot_id %}&bot_id={{ bot_id }}{% endif %}{% if success is not none %}&success={{ success }}{% endif %}&per_page={{ per_page }}" class="btn btn-primary">下一页</a>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 

@@ -41,5 +41,52 @@
     </div>
     {% endif %}
 </div>
+
+<!-- 最近运行日志 -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">最近运行日志</h2>
+        <a href="/admin/runs" class="btn btn-primary">查看全部</a>
+    </div>
+    
+    {% if recent_runs %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Bot</th>
+                <th>开始时间</th>
+                <th>状态</th>
+                <th>新闻条数</th>
+                <th>消息</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for run in recent_runs %}
+            <tr>
+                <td>
+                    <a href="/admin/bots/{{ run.bot.id }}">{{ run.bot.name }}</a>
+                </td>
+                <td>{{ run.started_at.strftime('%Y-%m-%d %H:%M:%S') if run.started_at else '-' }}</td>
+                <td>
+                    <span class="badge {% if run.success %}badge-success{% else %}badge-danger{% endif %}">
+                        {% if run.success %}成功{% else %}失败{% endif %}
+                    </span>
+                </td>
+                <td>{{ run.items_count }}</td>
+                <td>
+                    {% if run.message %}
+                        <span title="{{ run.message }}">{{ run.message[:50] }}{% if run.message|length > 50 %}...{% endif %}</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="padding: 1rem;">还没有运行记录。</p>
+    {% endif %}
+</div>
 {% endblock %}
 

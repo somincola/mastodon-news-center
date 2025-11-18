@@ -153,10 +153,15 @@ def format_message_with_link(message: str, mastodon_account: str, base_url: str 
         return message
     
     # 将 "帖子 ID: 数字" 替换为链接
-    pattern = r'帖子 ID:\s*\d+'
-    replacement = f'帖子 ID: <a href="{post_url}" target="_blank" style="color: #3498db; text-decoration: none; font-weight: 500;">{post_id}</a>'
+    # 使用分组匹配，确保链接紧跟文字
+    pattern = r'(帖子 ID:\s*)(\d+)'
     
-    return re.sub(pattern, replacement, message)
+    def replace_func(match):
+        prefix = match.group(1)  # "帖子 ID: " 或 "帖子 ID:"
+        post_id_match = match.group(2)  # 帖子 ID 数字
+        return f'{prefix}<a href="{post_url}" target="_blank" class="post-link">{post_id_match}</a>'
+    
+    return re.sub(pattern, replace_func, message)
 
 
 # 注册 Jinja2 过滤器

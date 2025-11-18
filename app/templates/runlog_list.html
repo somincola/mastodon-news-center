@@ -58,7 +58,7 @@
         <h3 class="card-title">运行记录 (共 {{ total }} 条)</h3>
     </div>
     
-    <table class="table">
+    <table class="table runlog-table">
         <thead>
             <tr>
                 <th>ID</th>
@@ -101,9 +101,9 @@
                 <td>
                     {% if run.message %}
                         {% set formatted_message = run.message | format_message_with_link(run.bot.mastodon_account) %}
-                        <div title="{{ run.message }}" style="max-width: 400px; word-wrap: break-word;">
+                        <span class="message-cell" title="{{ run.message }}">
                             {{ formatted_message|safe }}
-                        </div>
+                        </span>
                     {% else %}
                         -
                     {% endif %}

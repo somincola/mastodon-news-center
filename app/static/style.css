@@ -300,7 +300,7 @@ body {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
-    table-layout: fixed;
+    table-layout: auto; /* 使用自动布局，根据内容调整 */
 }
 
 .table th,
@@ -337,7 +337,7 @@ body {
     border-bottom: none;
 }
 
-/* 表格列宽优化 - 通用样式，可针对特定表格覆盖 */
+/* 表格列宽优化 - 通用样式（默认值）*/
 .table th:nth-child(1),
 .table td:nth-child(1) {
     width: 5%;
@@ -364,8 +364,9 @@ body {
 
 .table th:nth-child(5),
 .table td:nth-child(5) {
-    width: 10%;
-    min-width: 100px;
+    width: 30%;
+    min-width: 300px;
+    max-width: 600px;
 }
 
 .table th:nth-child(6),
@@ -382,8 +383,9 @@ body {
 
 .table th:nth-child(8),
 .table td:nth-child(8) {
-    width: 8%;
-    min-width: 80px;
+    width: 25%;
+    min-width: 350px;
+    max-width: 600px;
 }
 
 .table th:nth-child(9),
@@ -397,6 +399,121 @@ body {
     width: 8%;
     min-width: 120px;
 }
+
+/* Dashboard 表格列宽优化（5 列：Bot, 开始时间, 状态, 新闻条数, 消息）*/
+/* 使用更灵活的列宽设置，让内容自然流动 */
+.dashboard-runs-table th:nth-child(1),
+.dashboard-runs-table td:nth-child(1) {
+    width: auto;
+    min-width: 100px;
+    white-space: nowrap;
+}
+
+.dashboard-runs-table th:nth-child(2),
+.dashboard-runs-table td:nth-child(2) {
+    width: auto;
+    min-width: 160px;
+    white-space: nowrap;
+}
+
+/* 列3：状态（非常紧凑）*/
+.dashboard-runs-table th:nth-child(3),
+.dashboard-runs-table td:nth-child(3) {
+    width: auto;
+    min-width: 70px;
+    max-width: 80px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* 列4：新闻条数（非常紧凑）*/
+.dashboard-runs-table th:nth-child(4),
+.dashboard-runs-table td:nth-child(4) {
+    width: auto;
+    min-width: 80px;
+    max-width: 100px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* 列5：消息（占用剩余空间）*/
+.dashboard-runs-table th:nth-child(5),
+.dashboard-runs-table td:nth-child(5) {
+    width: auto;
+    min-width: 300px;
+    /* 不设置最大宽度，让它自然扩展 */
+}
+
+/* Run Logs 表格列宽优化（8 列：ID, Bot, 开始时间, 结束时间, 耗时, 状态, 新闻条数, 消息）*/
+/* 使用更灵活的列宽设置，让内容自然流动 */
+.runlog-table th:nth-child(1),
+.runlog-table td:nth-child(1) {
+    width: auto;
+    min-width: 50px;
+    max-width: 70px;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.runlog-table th:nth-child(2),
+.runlog-table td:nth-child(2) {
+    width: auto;
+    min-width: 100px;
+    white-space: nowrap;
+}
+
+.runlog-table th:nth-child(3),
+.runlog-table td:nth-child(3) {
+    width: auto;
+    min-width: 160px;
+    white-space: nowrap;
+}
+
+.runlog-table th:nth-child(4),
+.runlog-table td:nth-child(4) {
+    width: auto;
+    min-width: 160px;
+    white-space: nowrap;
+}
+
+/* 列5：耗时（紧凑）*/
+.runlog-table th:nth-child(5),
+.runlog-table td:nth-child(5) {
+    width: auto;
+    min-width: 80px;
+    max-width: 100px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* 列6：状态（非常紧凑）*/
+.runlog-table th:nth-child(6),
+.runlog-table td:nth-child(6) {
+    width: auto;
+    min-width: 70px;
+    max-width: 80px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* 列7：新闻条数（非常紧凑）*/
+.runlog-table th:nth-child(7),
+.runlog-table td:nth-child(7) {
+    width: auto;
+    min-width: 80px;
+    max-width: 100px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* 列8：消息（占用剩余空间）*/
+.runlog-table th:nth-child(8),
+.runlog-table td:nth-child(8) {
+    width: auto;
+    min-width: 350px;
+    /* 不设置最大宽度，让它自然扩展 */
+}
+
 
 /* 操作列样式 */
 .table .actions {
@@ -505,6 +622,39 @@ body {
 /* 包含badge的单元格可以换行 */
 .table td > div .badge {
     flex-shrink: 0;
+}
+
+/* 消息单元格样式 - 确保消息和链接在同一行 */
+.message-cell {
+    display: inline;
+    white-space: normal;
+    word-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.6;
+    max-width: 100%;
+}
+
+/* 消息单元格中的链接样式 - 确保链接紧跟文字，不换行 */
+.message-cell a,
+.message-cell .post-link {
+    display: inline;
+    white-space: nowrap;
+    margin-left: 0.25rem;
+    color: var(--info);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.message-cell a:hover,
+.message-cell .post-link:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+.message-cell a:visited,
+.message-cell .post-link:visited {
+    color: var(--info);
 }
 
 /* 确保表格行高度一致 */

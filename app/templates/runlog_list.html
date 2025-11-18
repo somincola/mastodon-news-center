@@ -100,7 +100,10 @@
                 <td>{{ run.items_count }}</td>
                 <td>
                     {% if run.message %}
-                        <span title="{{ run.message }}">{{ run.message[:50] }}{% if run.message|length > 50 %}...{% endif %}</span>
+                        {% set formatted_message = run.message | format_message_with_link(run.bot.mastodon_account) %}
+                        <div title="{{ run.message }}" style="max-width: 400px; word-wrap: break-word;">
+                            {{ formatted_message|safe }}
+                        </div>
                     {% else %}
                         -
                     {% endif %}

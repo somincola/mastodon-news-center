@@ -235,7 +235,15 @@ async def fetch_and_format_news(bot: Bot, db: Session) -> tuple[List[NewsItem], 
     # 3. 限制条数
     limited_news = limit_items(unique_news, bot.max_items)
     
-    # 4. 格式化为 Mastodon 帖子
+    # 4. (可选) AI 摘要
+    if bot.use_ai:
+        from app.ai_summary import summarize_news_list
+        try:
+            limited_news = await summarize_news_list(limited_news, max_length=150)
+        except Exception as e:
+            print(f"AI 摘要失败: {str(e)}，使用原标题")
+    
+    # 5. 格式化为 Mastodon 帖子
     formatted_text = format_news_for_mastodon(limited_news, bot.name)
     
     return limited_news, formatted_text

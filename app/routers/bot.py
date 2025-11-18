@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Form
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
 from app.database import get_db
 from app.models import Bot
 from app.main import render_template
+from app.config import settings
+from app.mastodon_client import MastodonClient
 
 router = APIRouter(prefix="/api/bots", tags=["bots"])
 admin_router = APIRouter(prefix="/admin/bots", tags=["admin-bots"])
@@ -200,4 +202,44 @@ async def delete_bot_web(bot_id: int, db: Session = Depends(get_db)):
     db.delete(bot)
     db.commit()
     return RedirectResponse(url="/admin/dashboard", status_code=303)
+
+
+@admin_router.post("/{bot_id}/test")
+async def test_bot_post(bot_id: int, db: Session = Depends(get_db)):
+    """
+    测试 Bot 发布功能
+    """
+    bot = db.query(Bot).filter(Bot.id == bot_id).first()
+    if not bot:
+        raise HTTPException(status_code=404, detail="Bot not found")
+    
+    test_message = f"测试消息 - 来自 {bot.name} Bot\n\n这是一条测试消息，用于验证 Mastodon API 连接是否正常。"
+    
+    try:
+        client = MastodonClient(settings.mastodon_base_url, bot.mastodon_token)
+        result = await client.post_status(test_message, visibility="public")
+        
+        return HTMLResponse(content=f"""
+        <html>
+        <head><title>测试成功</title></head>
+        <body>
+            <h1>测试成功！</h1>
+            <p>帖子已成功发布到 Mastodon。</p>
+            <p>帖子 ID: {result.get('id', 'N/A')}</p>
+            <p>内容: {result.get('content', 'N/A')[:200]}...</p>
+            <p><a href="/admin/bots/{bot_id}">返回 Bot 详情</a></p>
+        </body>
+        </html>
+        """)
+    except Exception as e:
+        return HTMLResponse(content=f"""
+        <html>
+        <head><title>测试失败</title></head>
+        <body>
+            <h1>测试失败</h1>
+            <p>错误信息: {str(e)}</p>
+            <p><a href="/admin/bots/{bot_id}">返回 Bot 详情</a></p>
+        </body>
+        </html>
+        """, status_code=500)
 

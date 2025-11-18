@@ -61,6 +61,16 @@
         <h3>关联的 Feeds</h3>
         <a href="/admin/feeds?bot_id={{ bot.id }}" class="btn btn-primary">管理 Feeds</a>
     </div>
+    
+    <div style="margin-top: 2rem;">
+        <h3>测试功能</h3>
+        <p>点击下方按钮测试 Bot 是否能正常发布消息到 Mastodon。</p>
+        <form action="/admin/bots/{{ bot.id }}/test" method="post" style="display: inline;">
+            <button type="submit" class="btn btn-warning" onclick="return confirm('确定要发布测试消息吗？')">
+                发布测试消息
+            </button>
+        </form>
+    </div>
     {% endif %}
 </div>
 {% endblock %}

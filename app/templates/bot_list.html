@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Bot 管理 - Somincola News Center{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Bot 管理</h2>
+        <a href="/admin/bots/new" class="btn btn-success">创建新 Bot</a>
+        <a href="/admin/dashboard" class="btn btn-primary">返回 Dashboard</a>
+    </div>
+</div>
+
+{% if bots_with_stats %}
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>名称</th>
+                <th>Mastodon 账号</th>
+                <th>状态</th>
+                <th>RSS 源</th>
+                <th>运行时间</th>
+                <th>最大条数</th>
+                <th>AI 摘要</th>
+                <th>最近运行</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in bots_with_stats %}
+            {% set bot = item.bot %}
+            <tr>
+                <td>{{ bot.id }}</td>
+                <td>
+                    <a href="/admin/bots/{{ bot.id }}" style="font-weight: 600; color: #2c3e50; text-decoration: none;">
+                        {{ bot.name }}
+                    </a>
+                </td>
+                <td>{{ bot.mastodon_account }}</td>
+                <td>
+                    <span class="badge {% if bot.enabled %}badge-success{% else %}badge-danger{% endif %}">
+                        {% if bot.enabled %}启用{% else %}禁用{% endif %}
+                    </span>
+                </td>
+                <td>
+                    <span title="启用: {{ item.enabled_feeds_count }}, 总计: {{ item.total_feeds_count }}">
+                        {{ item.enabled_feeds_count }}/{{ item.total_feeds_count }}
+                    </span>
+                    <a href="/admin/feeds?bot_id={{ bot.id }}" class="btn btn-primary btn-sm" style="margin-left: 0.5rem;">管理</a>
+                </td>
+                <td>
+                    {% if bot.schedule_times %}
+                        {{ bot.schedule_times | join(", ") }}
+                    {% else %}
+                        <span style="color: #999;">未设置</span>
+                    {% endif %}
+                </td>
+                <td>{{ bot.max_items }}</td>
+                <td>
+                    {% if bot.use_ai %}
+                        <span class="badge badge-success">启用</span>
+                    {% else %}
+                        <span class="badge" style="background: #e9ecef; color: #6c757d;">禁用</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.latest_run %}
+                        <div style="font-size: 0.85rem;">
+                            <div>{{ item.latest_run.started_at.strftime('%m-%d %H:%M') if item.latest_run.started_at else '-' }}</div>
+                            <span class="badge {% if item.latest_run.success %}badge-success{% else %}badge-danger{% endif %}" style="font-size: 0.75rem;">
+                                {% if item.latest_run.success %}成功{% else %}失败{% endif %}
+                            </span>
+                        </div>
+                    {% else %}
+                        <span style="color: #999;">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="actions" style="gap: 0.25rem;">
+                        <a href="/admin/bots/{{ bot.id }}" class="btn btn-primary btn-sm">编辑</a>
+                        <a href="/admin/bots/{{ bot.id }}/preview" class="btn btn-primary btn-sm" title="预览发布内容">预览</a>
+                        <form action="/admin/bots/{{ bot.id }}/toggle" method="post" style="display: inline;">
+                            <button type="submit" class="btn {% if bot.enabled %}btn-warning{% else %}btn-success{% endif %} btn-sm">
+                                {% if bot.enabled %}禁用{% else %}启用{% endif %}
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- 卡片视图（可选） -->
+<div class="grid" style="margin-top: 1rem;">
+    {% for item in bots_with_stats %}
+    {% set bot = item.bot %}
+    <div class="grid-item">
+        <h3>
+            <a href="/admin/bots/{{ bot.id }}" style="color: #2c3e50; text-decoration: none;">{{ bot.name }}</a>
+        </h3>
+        <p><strong>状态:</strong> 
+            <span class="{% if bot.enabled %}status-enabled{% else %}status-disabled{% endif %}">
+                {% if bot.enabled %}启用{% else %}禁用{% endif %}
+            </span>
+        </p>
+        <p><strong>账号:</strong> {{ bot.mastodon_account }}</p>
+        <p><strong>RSS 源:</strong> {{ item.enabled_feeds_count }}/{{ item.total_feeds_count }}</p>
+        <p><strong>运行时间:</strong> {{ bot.schedule_times | join(", ") if bot.schedule_times else "未设置" }}</p>
+        <p><strong>最大条目:</strong> {{ bot.max_items }}</p>
+        <p><strong>AI 摘要:</strong> {% if bot.use_ai %}启用{% else %}禁用{% endif %}</p>
+        {% if item.latest_run %}
+        <p><strong>最近运行:</strong> 
+            <span class="badge {% if item.latest_run.success %}badge-success{% else %}badge-danger{% endif %}">
+                {% if item.latest_run.success %}成功{% else %}失败{% endif %}
+            </span>
+            <small style="color: #999;">{{ item.latest_run.started_at.strftime('%m-%d %H:%M') if item.latest_run.started_at else '-' }}</small>
+        </p>
+        {% endif %}
+        <div class="actions" style="margin-top: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <a href="/admin/bots/{{ bot.id }}" class="btn btn-primary btn-sm">编辑</a>
+            <a href="/admin/bots/{{ bot.id }}/preview" class="btn btn-primary btn-sm">预览</a>
+            <a href="/admin/feeds?bot_id={{ bot.id }}" class="btn btn-primary btn-sm">Feeds</a>
+            <form action="/admin/bots/{{ bot.id }}/toggle" method="post" style="display: inline;">
+                <button type="submit" class="btn {% if bot.enabled %}btn-warning{% else %}btn-success{% endif %} btn-sm">
+                    {% if bot.enabled %}禁用{% else %}启用{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div style="text-align: center; padding: 2rem;">
+        <h3>还没有创建任何 Bot</h3>
+        <p style="color: #7f8c8d; margin: 1rem 0;">请先创建一个 Bot 来开始使用。</p>
+        <a href="/admin/bots/new" class="btn btn-success">创建新 Bot</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

@@ -27,7 +27,7 @@ services:
     ports:
       - "${APP_PORT:-8000}:8000"
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-somincola}:${POSTGRES_PASSWORD:-somincola}@db:5432/${POSTGRES_DB:-somincola_news}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-somincola}:${POSTGRES_PASSWORD:-changeme_in_production}@db:5432/${POSTGRES_DB:-somincola_news}
       - MASTODON_BASE_URL=${MASTODON_BASE_URL:-https://m.somincola.org}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - PYTHONUNBUFFERED=1

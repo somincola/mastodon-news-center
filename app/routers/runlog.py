@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 from app.database import get_db
 from app.models import Run
+from app.main import render_template
 
 router = APIRouter(prefix="/api/runs", tags=["runs"])
+admin_router = APIRouter(prefix="/admin/runs", tags=["admin-runs"])
 
 
 class RunResponse(BaseModel):
@@ -48,4 +50,19 @@ async def get_run(run_id: int, db: Session = Depends(get_db)):
 async def get_latest_run(bot_id: int, db: Session = Depends(get_db)):
     run = db.query(Run).filter(Run.bot_id == bot_id).order_by(Run.started_at.desc()).first()
     return run
+
+
+# Web UI 路由
+@admin_router.get("/")
+async def list_runs_web(
+    request: Request,
+    bot_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db)
+):
+    from sqlalchemy.orm import joinedload
+    query = db.query(Run).options(joinedload(Run.bot))
+    if bot_id:
+        query = query.filter(Run.bot_id == bot_id)
+    runs = query.order_by(Run.started_at.desc()).limit(100).all()
+    return render_template("runlog_list.html", request, runs=runs, bot_id=bot_id)
 

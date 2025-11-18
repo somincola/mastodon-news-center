@@ -1,9 +1,22 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi import Request
+from jinja2 import Environment, FileSystemLoader
 from app.database import init_db
 from app.routers import admin, bot, feed, runlog
 
 app = FastAPI(title="Somincola News Center")
+
+# 挂载静态文件
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+# 配置模板
+templates_env = Environment(loader=FileSystemLoader("app/templates"))
+
+def render_template(template_name: str, request: Request, **context):
+    template = templates_env.get_template(template_name)
+    return HTMLResponse(content=template.render(**context))
 
 # 初始化数据库
 @app.on_event("startup")
@@ -13,8 +26,11 @@ def startup_event():
 # 注册路由
 app.include_router(admin.router)
 app.include_router(bot.router)
+app.include_router(bot.admin_router)
 app.include_router(feed.router)
+app.include_router(feed.admin_router)
 app.include_router(runlog.router)
+app.include_router(runlog.admin_router)
 
 
 @app.get("/", response_class=HTMLResponse)

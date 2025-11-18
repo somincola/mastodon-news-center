@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Somincola News Center{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Dashboard</h2>
+        <a href="/admin/bots/new" class="btn btn-primary">创建新 Bot</a>
+    </div>
+</div>
+
+<div class="grid">
+    {% for bot in bots %}
+    <div class="grid-item">
+        <h3>{{ bot.name }}</h3>
+        <p><strong>状态:</strong> 
+            <span class="{% if bot.enabled %}status-enabled{% else %}status-disabled{% endif %}">
+                {% if bot.enabled %}启用{% else %}禁用{% endif %}
+            </span>
+        </p>
+        <p><strong>账号:</strong> {{ bot.mastodon_account }}</p>
+        <p><strong>最大条目:</strong> {{ bot.max_items }}</p>
+        <p><strong>运行时间:</strong> {{ bot.schedule_times | join(", ") if bot.schedule_times else "未设置" }}</p>
+        <p><strong>AI 摘要:</strong> {% if bot.use_ai %}启用{% else %}禁用{% endif %}</p>
+        <div class="actions" style="margin-top: 1rem;">
+            <a href="/admin/bots/{{ bot.id }}" class="btn btn-primary">编辑</a>
+            <form action="/admin/bots/{{ bot.id }}/toggle" method="post" style="display: inline;">
+                <button type="submit" class="btn {% if bot.enabled %}btn-warning{% else %}btn-success{% endif %}">
+                    {% if bot.enabled %}禁用{% else %}启用{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+    
+    {% if not bots %}
+    <div class="card">
+        <p>还没有创建任何 Bot。请先创建一个 Bot。</p>
+        <a href="/admin/bots/new" class="btn btn-primary">创建新 Bot</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

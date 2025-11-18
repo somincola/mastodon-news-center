@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}运行日志 - Somincola News Center{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">运行日志</h2>
+    </div>
+</div>
+
+{% if bot_id %}
+<div class="card">
+    <p><a href="/admin/bots/{{ bot_id }}">返回 Bot 详情</a></p>
+</div>
+{% endif %}
+
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Bot</th>
+                <th>开始时间</th>
+                <th>结束时间</th>
+                <th>状态</th>
+                <th>新闻条数</th>
+                <th>消息</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for run in runs %}
+            <tr>
+                <td>{{ run.id }}</td>
+                <td>{{ run.bot.name }}</td>
+                <td>{{ run.started_at.strftime('%Y-%m-%d %H:%M:%S') if run.started_at else '-' }}</td>
+                <td>{{ run.finished_at.strftime('%Y-%m-%d %H:%M:%S') if run.finished_at else '-' }}</td>
+                <td>
+                    <span class="badge {% if run.success %}badge-success{% else %}badge-danger{% endif %}">
+                        {% if run.success %}成功{% else %}失败{% endif %}
+                    </span>
+                </td>
+                <td>{{ run.items_count }}</td>
+                <td>{{ run.message[:100] if run.message else '-' }}...</td>
+            </tr>
+            {% endfor %}
+            
+            {% if not runs %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem;">
+                    还没有运行记录。
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

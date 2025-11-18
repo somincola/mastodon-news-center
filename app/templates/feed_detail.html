@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}{% if feed %}编辑 Feed{% else %}创建 Feed{% endif %} - Somincola News Center{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">{% if feed %}编辑 Feed{% else %}创建新 Feed{% endif %}</h2>
+        <a href="/admin/feeds{% if bot_id %}?bot_id={{ bot_id }}{% endif %}" class="btn btn-primary">返回</a>
+    </div>
+    
+    <form method="post" action="{% if feed %}/admin/feeds/{{ feed.id }}{% else %}/admin/feeds{% endif %}">
+        <div class="form-group">
+            <label for="bot_id">Bot *</label>
+            <select id="bot_id" name="bot_id" required>
+                {% for bot in bots %}
+                <option value="{{ bot.id }}" {% if (feed and feed.bot_id == bot.id) or (bot_id and bot_id == bot.id) %}selected{% endif %}>
+                    {{ bot.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="name">名称 *</label>
+            <input type="text" id="name" name="name" value="{{ feed.name if feed else '' }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="url">RSS URL *</label>
+            <input type="url" id="url" name="url" value="{{ feed.url if feed else '' }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="max_per_run">每次最大条数</label>
+            <input type="number" id="max_per_run" name="max_per_run" value="{{ feed.max_per_run if feed else 10 }}" min="1" max="50">
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="enabled" {% if feed and feed.enabled or not feed %}checked{% endif %}>
+                启用
+            </label>
+        </div>
+        
+        <div class="actions">
+            <button type="submit" class="btn btn-success">保存</button>
+            <a href="/admin/feeds{% if bot_id %}?bot_id={{ bot_id }}{% endif %}" class="btn btn-primary">取消</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

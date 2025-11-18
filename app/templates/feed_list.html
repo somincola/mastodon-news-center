@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Feed 管理 - Somincola News Center{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Feed 管理</h2>
+        <a href="/admin/feeds/new{% if bot_id %}?bot_id={{ bot_id }}{% endif %}" class="btn btn-primary">添加新 Feed</a>
+    </div>
+</div>
+
+{% if bot_id %}
+<div class="card">
+    <p><a href="/admin/bots/{{ bot_id }}">返回 Bot 详情</a></p>
+</div>
+{% endif %}
+
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>名称</th>
+                <th>URL</th>
+                <th>Bot</th>
+                <th>状态</th>
+                <th>每次最大条数</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for feed in feeds %}
+            <tr>
+                <td>{{ feed.name }}</td>
+                <td><a href="{{ feed.url }}" target="_blank">{{ feed.url[:50] }}...</a></td>
+                <td>{{ feed.bot.name }}</td>
+                <td>
+                    <span class="badge {% if feed.enabled %}badge-success{% else %}badge-danger{% endif %}">
+                        {% if feed.enabled %}启用{% else %}禁用{% endif %}
+                    </span>
+                </td>
+                <td>{{ feed.max_per_run }}</td>
+                <td>
+                    <div class="actions">
+                        <a href="/admin/feeds/{{ feed.id }}" class="btn btn-primary">编辑</a>
+                        <form action="/admin/feeds/{{ feed.id }}/delete" method="post" style="display: inline;">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('确定要删除这个 Feed 吗？')">删除</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            
+            {% if not feeds %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 2rem;">
+                    还没有添加任何 Feed。
+                    <a href="/admin/feeds/new{% if bot_id %}?bot_id={{ bot_id }}{% endif %}" class="btn btn-primary">添加新 Feed</a>
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

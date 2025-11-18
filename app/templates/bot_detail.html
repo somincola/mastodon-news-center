@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}{% if bot %}编辑 Bot{% else %}创建 Bot{% endif %} - Somincola News Center{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">{% if bot %}编辑 Bot{% else %}创建新 Bot{% endif %}</h2>
+        <a href="/admin/dashboard" class="btn btn-primary">返回</a>
+    </div>
+    
+    <form method="post" action="{% if bot %}/admin/bots/{{ bot.id }}{% else %}/admin/bots{% endif %}">
+        <div class="form-group">
+            <label for="name">名称 *</label>
+            <input type="text" id="name" name="name" value="{{ bot.name if bot else '' }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="mastodon_token">Mastodon Token *</label>
+            <textarea id="mastodon_token" name="mastodon_token" rows="3" required>{{ bot.mastodon_token if bot else '' }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="mastodon_account">Mastodon 账号 *</label>
+            <input type="text" id="mastodon_account" name="mastodon_account" value="{{ bot.mastodon_account if bot else '' }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="schedule_times">运行时间 (每行一个，格式: HH:MM，例如: 09:00)</label>
+            <textarea id="schedule_times" name="schedule_times" rows="5">{{ (bot.schedule_times | join("\n")) if bot and bot.schedule_times else '' }}</textarea>
+            <small>例如: 09:00, 18:00（每行一个时间点）</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="max_items">最大新闻条数</label>
+            <input type="number" id="max_items" name="max_items" value="{{ bot.max_items if bot else 5 }}" min="1" max="20">
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="enabled" {% if bot and bot.enabled or not bot %}checked{% endif %}>
+                启用
+            </label>
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="use_ai" {% if bot and bot.use_ai %}checked{% endif %}>
+                使用 AI 摘要
+            </label>
+        </div>
+        
+        <div class="actions">
+            <button type="submit" class="btn btn-success">保存</button>
+            <a href="/admin/dashboard" class="btn btn-primary">取消</a>
+        </div>
+    </form>
+    
+    {% if bot %}
+    <div style="margin-top: 2rem;">
+        <h3>关联的 Feeds</h3>
+        <a href="/admin/feeds?bot_id={{ bot.id }}" class="btn btn-primary">管理 Feeds</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

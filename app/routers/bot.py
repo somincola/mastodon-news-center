@@ -8,6 +8,7 @@ from app.models import Bot
 from app.main import render_template
 from app.config import settings
 from app.mastodon_client import MastodonClient
+from app.scheduler import reload_jobs
 
 router = APIRouter(prefix="/api/bots", tags=["bots"])
 admin_router = APIRouter(prefix="/admin/bots", tags=["admin-bots"])
@@ -179,6 +180,10 @@ async def update_bot_web(
     
     db.commit()
     db.refresh(bot)
+    
+    # 重新加载调度器任务
+    reload_jobs()
+    
     return RedirectResponse(url="/admin/dashboard", status_code=303)
 
 
@@ -190,6 +195,10 @@ async def toggle_bot(bot_id: int, db: Session = Depends(get_db)):
     
     bot.enabled = not bot.enabled
     db.commit()
+    
+    # 重新加载调度器任务
+    reload_jobs()
+    
     return RedirectResponse(url="/admin/dashboard", status_code=303)
 
 
@@ -242,4 +251,43 @@ async def test_bot_post(bot_id: int, db: Session = Depends(get_db)):
         </body>
         </html>
         """, status_code=500)
+
+
+@admin_router.post("/{bot_id}/run")
+async def run_bot_manual(bot_id: int, db: Session = Depends(get_db)):
+    """
+    手动触发 Bot 任务执行
+    """
+    bot = db.query(Bot).filter(Bot.id == bot_id).first()
+    if not bot:
+        raise HTTPException(status_code=404, detail="Bot not found")
+    
+    if not bot.enabled:
+        return HTMLResponse(content=f"""
+        <html>
+        <head><title>执行失败</title></head>
+        <body>
+            <h1>执行失败</h1>
+            <p>Bot {bot.name} 已禁用，无法执行任务。</p>
+            <p><a href="/admin/bots/{bot_id}">返回 Bot 详情</a></p>
+        </body>
+        </html>
+        """, status_code=400)
+    
+    # 异步执行任务（不等待完成）
+    import asyncio
+    from app.scheduler import execute_bot_task
+    asyncio.create_task(execute_bot_task(bot_id))
+    
+    return HTMLResponse(content=f"""
+    <html>
+    <head><title>任务已触发</title></head>
+    <body>
+        <h1>任务已触发</h1>
+        <p>Bot {bot.name} 的任务已在后台执行，请稍后在运行日志中查看结果。</p>
+        <p><a href="/admin/bots/{bot_id}">返回 Bot 详情</a></p>
+        <p><a href="/admin/runs?bot_id={bot_id}">查看运行日志</a></p>
+    </body>
+    </html>
+    """)
 

@@ -18,10 +18,20 @@ def render_template(template_name: str, request: Request, **context):
     template = templates_env.get_template(template_name)
     return HTMLResponse(content=template.render(**context))
 
-# 初始化数据库
+# 初始化数据库和调度器
 @app.on_event("startup")
-def startup_event():
+async def startup_event():
     init_db()
+    # 启动调度器
+    from app.scheduler import start_scheduler
+    start_scheduler()
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    # 停止调度器
+    from app.scheduler import stop_scheduler
+    stop_scheduler()
 
 # 注册路由
 app.include_router(admin.router)

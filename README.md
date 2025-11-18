@@ -117,25 +117,71 @@ docker-compose down
 - 新闻条数
 - 详细消息
 
-## 配置说明
+## 详细配置说明
 
-### 环境变量
+### 环境变量配置（`.env` 文件）
 
-所有配置项都在 `.env` 文件中，包括：
+#### 数据库配置
+```env
+POSTGRES_USER=somincola              # 数据库用户名
+POSTGRES_PASSWORD=your_strong_password  # ⚠️ 数据库密码（必须修改！）
+POSTGRES_DB=somincola_news           # 数据库名称
+POSTGRES_PORT=5432                   # 数据库端口
+DATABASE_URL=postgresql://somincola:your_strong_password@localhost:5432/somincola_news
+```
 
-- **数据库配置**：`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
-- **应用配置**：`APP_PORT`
-- **Mastodon 配置**：`MASTODON_BASE_URL`
-- **OpenAI 配置**：`OPENAI_API_KEY`（可选）
+#### 应用配置
+```env
+APP_PORT=8000  # Web 服务端口
+```
 
-### Bot 配置
+#### Mastodon 配置
+```env
+MASTODON_BASE_URL=https://m.somincola.org  # 你的 Mastodon 实例地址
+```
+
+#### OpenAI 配置（可选）
+```env
+OPENAI_API_KEY=sk-...  # 如需使用 AI 摘要功能，填写你的 API Key
+```
+
+### Bot 配置（通过 Web 界面）
 
 在 Web 管理界面中配置每个 Bot：
 
-1. **创建 Bot**：设置名称、Mastodon Token、账号
-2. **配置运行时间**：设置每日运行时间（格式：HH:MM，每行一个）
-3. **添加 RSS Feeds**：为每个 Bot 添加新闻源
-4. **AI 摘要**（可选）：开启 AI 摘要功能
+1. **基本设置**：
+   - **名称**：Bot 名称（例如：Daily、Tech、Finance）
+   - **Mastodon Token**：从 Mastodon 实例获取的应用 Token
+   - **Mastodon 账号**：Bot 账号（格式：@bot@instance.com）
+
+2. **运行配置**：
+   - **运行时间**：每日执行时间（格式：HH:MM，每行一个）
+     - 示例：`09:00`、`18:00`
+   - **最大新闻条数**：每条动态包含的新闻数量（1-20）
+   - **启用状态**：是否启用该 Bot
+
+3. **AI 摘要**（可选）：
+   - 开启后，每条新闻会通过 OpenAI API 进行摘要压缩
+   - 需要配置 `OPENAI_API_KEY` 环境变量
+   - 关闭时使用原标题
+
+4. **RSS 源管理**：
+   - 为每个 Bot 添加多个 RSS 源
+   - 每个源可设置名称、URL、每次最大抓取条数
+   - 可单独启用/禁用某个源
+
+### Mastodon Token 获取方法
+
+1. 登录你的 Mastodon 实例
+2. 进入"设置" → "开发" → "新应用"
+3. 填写应用信息：
+   - 应用名称：例如 "News Bot"
+   - 权限：选择"读写"（需要发布状态）
+   - 重定向 URI：可以留空
+4. 创建应用后，复制生成的 Access Token
+5. 将 Token 粘贴到 Bot 配置中
+
+⚠️ **注意**：Token 具有发布权限，请妥善保管，不要泄露。
 
 ## 安全注意事项
 

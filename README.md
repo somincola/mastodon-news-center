@@ -23,6 +23,26 @@
 - **任务调度**：APScheduler
 - **容器化**：Docker + docker-compose
 
+## 界面预览
+
+### Dashboard（仪表盘）
+
+统一的 Bot 管理中心，一目了然地查看所有 Bot 的状态和最近的运行日志。
+
+![Dashboard](docs/images/dashboard.png)
+
+### Bot 详情页
+
+管理 Bot 的配置，包括 RSS 源、运行时间、模板选择等。
+
+![Bot 详情](docs/images/bots_detail.png)
+
+### 模板管理
+
+创建和管理自定义发帖模板，使用 Jinja2 语法灵活定义发帖格式。
+
+![模板管理](docs/images/templtes.png)
+
 ## 快速开始
 
 ### 本地开发

@@ -7,11 +7,12 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.models import Template
 from app.utils import render_template
+from app.auth import get_current_user
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/templates", tags=["templates"])
-admin_router = APIRouter(prefix="/admin/templates", tags=["admin-templates"])
+admin_router = APIRouter(prefix="/admin/templates", tags=["admin-templates"], dependencies=[Depends(get_current_user)])
 
 
 class TemplateCreate(BaseModel):

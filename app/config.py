@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     # OpenAI (Optional)
     openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY", None)
     
+    # Admin Authentication
+    admin_password: str = os.getenv("ADMIN_PASSWORD", "123456")  # 管理员密码（默认: 123456）
+    
     class Config:
         env_file = ".env"
         case_sensitive = False

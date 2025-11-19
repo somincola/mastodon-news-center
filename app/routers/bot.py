@@ -10,11 +10,12 @@ from app.utils import render_template
 from app.config import settings
 from app.mastodon_client import MastodonClient
 from app.scheduler import reload_jobs
+from app.auth import get_current_user
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/bots", tags=["bots"])
-admin_router = APIRouter(prefix="/admin/bots", tags=["admin-bots"])
+admin_router = APIRouter(prefix="/admin/bots", tags=["admin-bots"], dependencies=[Depends(get_current_user)])
 
 
 class BotCreate(BaseModel):

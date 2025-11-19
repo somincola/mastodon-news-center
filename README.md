@@ -77,6 +77,9 @@ cp .env.example .env
 #### 主要配置项：
 
 ```env
+# 管理员密码（默认: 123456，生产环境必须修改！）
+ADMIN_PASSWORD=123456
+
 # 数据库密码（生产环境必须修改！）
 POSTGRES_PASSWORD=your_strong_password_here
 
@@ -105,12 +108,13 @@ docker-compose ps
 
 启动成功后访问：
 
-- **Web 管理界面**：http://localhost:8000/admin
+- **首页/登录页**：http://localhost:8000/（默认密码：`123456`）
+- **管理后台**：http://localhost:8000/admin/dashboard
 - **API 文档**：http://localhost:8000/docs
 
 ### 4. 首次配置
 
-1. **访问管理界面**：http://localhost:8000/admin
+1. **访问管理界面**：http://localhost:8000/（默认密码：`123456`）
 2. **创建 Bot**：
    - 填写 Bot 名称、Mastodon Token 和账号
    - 配置运行时间（格式：HH:MM，每行一个，例如：`09:00`）
@@ -435,27 +439,34 @@ OPENAI_API_KEY=sk-...  # 如需使用 AI 摘要功能，填写你的 API Key
 
 ### 生产环境部署前必须完成：
 
-1. **修改数据库密码**：
+1. **修改管理员密码**：
+   - 默认密码为 `123456`（仅用于开发测试）
+   - 在 `.env` 文件中**必须**修改为强密码：`ADMIN_PASSWORD=你的强密码`
+   - 建议使用至少16位，包含大小写字母、数字、特殊字符
+   - 生成强密码方法：`openssl rand -base64 32`
+   - ⚠️ **不修改默认密码会导致安全风险！**
+
+2. **修改数据库密码**：
    - `.env.example` 中的密码只是示例
    - 在 `.env` 文件中必须使用强密码（至少16位，包含大小写字母、数字、特殊字符）
    - 示例：`POSTGRES_PASSWORD=My$tr0ng!P@ssw0rd2024`
 
-2. **保护敏感文件**：
+3. **保护敏感文件**：
    - `.env` 文件包含所有敏感信息，**永远不要提交到 Git**
    - 确保 `.env` 在 `.gitignore` 中（已默认配置）
    - 不要在任何公开场合分享 `.env` 文件
 
-3. **Mastodon Token 安全**：
+4. **Mastodon Token 安全**：
    - 在 Mastodon 实例中创建应用时，确保 Token 权限最小化
    - 仅授予必要的权限（读取账户信息、发布状态）
    - 定期轮换 Token
 
-4. **网络安全**：
+5. **网络安全**：
    - 生产环境建议使用反向代理（如 Nginx）并配置 HTTPS
    - 限制数据库端口访问（仅在容器内访问）
    - 定期更新依赖包以修复安全漏洞
 
-5. **关于 Git 历史记录**：
+6. **关于 Git 历史记录**：
    - 本项目中的 `.env.example` 文件会提交到 Git（这是标准做法）
    - `.env.example` 中的密码只是示例，不会被实际使用
    - 只要你的实际 `.env` 文件没有提交到 Git，就是安全的

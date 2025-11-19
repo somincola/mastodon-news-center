@@ -184,6 +184,9 @@ def render_template(template_name: str, request: Request, **context):
     Returns:
         HTMLResponse
     """
+    from app.auth import is_authenticated
+    # 自动将 is_authenticated 状态添加到模板上下文
+    context['is_authenticated'] = is_authenticated(request)
     template = templates_env.get_template(template_name)
     return HTMLResponse(content=template.render(**context))
 

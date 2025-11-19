@@ -11,16 +11,19 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - mastodon_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mastodon_news} -d ${POSTGRES_DB:-mastodon_news}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   app:
     build: .
     container_name: mastodon-news-app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level info
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info
     volumes:
       - ./app:/app/app
       - ./logs:/app/logs
@@ -30,10 +33,13 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-mastodon_news}:${POSTGRES_PASSWORD:-changeme_in_production}@db:5432/${POSTGRES_DB:-mastodon_news}
       - MASTODON_BASE_URL=${MASTODON_BASE_URL:-https://your-instance.com}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-123456}
       - PYTHONUNBUFFERED=1
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - mastodon_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
@@ -41,6 +47,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+networks:
+  mastodon_network:
+    driver: bridge
 
 volumes:
   postgres_data:

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Mastodon News Center{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">Mastodon News Center</h1>
+        <p class="hero-subtitle">统一管理多个 Mastodon 新闻 Bot 的后台管理系统</p>
+        
+        <div class="hero-features">
+            <div class="feature-item">
+                <div class="feature-icon">📰</div>
+                <h3>RSS 新闻抓取</h3>
+                <p>支持多个 RSS 源，自动抓取和去重</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">🤖</div>
+                <h3>多 Bot 管理</h3>
+                <p>统一管理多个新闻 Bot（Daily / Tech / Finance 等）</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">⏰</div>
+                <h3>定时任务</h3>
+                <p>基于 APScheduler 的灵活调度系统</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">📊</div>
+                <h3>运行日志</h3>
+                <p>完整的任务执行日志记录和查看</p>
+            </div>
+        </div>
+        
+        <div class="hero-actions">
+            <a href="/admin/dashboard" class="btn btn-primary btn-lg">进入管理后台</a>
+            <a href="/docs" class="btn btn-secondary btn-lg">查看 API 文档</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

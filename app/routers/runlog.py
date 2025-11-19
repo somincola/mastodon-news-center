@@ -6,9 +6,10 @@ from datetime import datetime
 from app.database import get_db
 from app.models import Run
 from app.utils import render_template
+from app.auth import get_current_user
 
 router = APIRouter(prefix="/api/runs", tags=["runs"])
-admin_router = APIRouter(prefix="/admin/runs", tags=["admin-runs"])
+admin_router = APIRouter(prefix="/admin/runs", tags=["admin-runs"], dependencies=[Depends(get_current_user)])
 
 
 class RunResponse(BaseModel):

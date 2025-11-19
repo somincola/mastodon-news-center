@@ -47,3 +47,5 @@ temp/
 *.tmp
 
 logs/
+
+docker-compose.override.yml

@@ -1,10 +1,12 @@
 import logging
+import secrets
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
+from starlette.middleware.sessions import SessionMiddleware
 from app.database import init_db
-from app.routers import admin, bot, feed, runlog
+from app.routers import admin, bot, feed, runlog, auth
 
 # 配置日志
 logging.basicConfig(
@@ -14,6 +16,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Mastodon News Center")
+
+# Session 密钥（用于加密 session）
+# 在启动时生成，确保每次启动使用不同的密钥
+SESSION_SECRET_KEY = secrets.token_urlsafe(32)
+
+# 添加 Session 中间件
+app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET_KEY, max_age=86400)  # 24小时过期
 
 # 全局异常处理
 @app.exception_handler(RequestValidationError)
@@ -27,6 +36,17 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     logger.error(f"HTTP 错误: {exc.status_code} - {exc.detail}")
+    
+    # 如果是重定向（307），直接返回重定向响应
+    if exc.status_code == 307 and "Location" in exc.headers:
+        return RedirectResponse(url=exc.headers["Location"], status_code=307)
+    
+    # 对于 Web 请求，如果是 401 未授权，重定向到登录页
+    if exc.status_code == 401:
+        accept = request.headers.get("accept", "")
+        if "text/html" in accept:
+            return RedirectResponse(url="/login", status_code=303)
+    
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail}
@@ -58,7 +78,8 @@ async def shutdown_event():
     from app.scheduler import stop_scheduler
     stop_scheduler()
 
-# 注册路由
+# 注册路由（注意顺序：auth 路由需要在 admin 之前注册）
+app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(bot.router)
 app.include_router(bot.admin_router)
@@ -69,22 +90,4 @@ app.include_router(runlog.admin_router)
 from app.routers import template
 app.include_router(template.router)
 app.include_router(template.admin_router)
-
-
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Mastodon News Center</title>
-        <meta charset="utf-8">
-    </head>
-    <body>
-        <h1>Mastodon News Center</h1>
-        <p>Welcome to Mastodon News Center</p>
-        <p><a href="/admin">Go to Admin</a></p>
-    </body>
-    </html>
-    """
 

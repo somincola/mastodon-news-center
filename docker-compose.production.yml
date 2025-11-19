@@ -1,0 +1,107 @@
+# ============================================
+# Mastodon News Center - 生产环境配置
+# ============================================
+# 
+# 用途：生产环境部署
+# 特点：
+#   - 数据库端口不暴露（仅内部网络访问）
+#   - 应用代码不挂载（使用镜像内代码）
+#   - 优化的重启策略和健康检查
+#   - 独立的网络和数据卷
+#
+# 启动方式：
+#   docker compose -f docker-compose.production.yml up -d --build
+#
+# ⚠️ 安全提示：
+#   1. 确保 .env 文件中设置了强密码
+#   2. 使用反向代理（Nginx）配置 HTTPS
+#   3. 配置防火墙规则，限制数据库访问
+#   4. 定期备份数据库卷
+#
+# ============================================
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: mastodon-news-db
+    environment:
+      # ⚠️ 生产环境必须设置强密码！
+      POSTGRES_USER: ${POSTGRES_USER:-mastodon_news}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-mastodon_news}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # 生产环境：不暴露数据库端口到宿主机
+    # 数据库仅通过 Docker 内部网络访问
+    expose:
+      - "5432"
+    networks:
+      - mastodon_news_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mastodon_news} -d ${POSTGRES_DB:-mastodon_news}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    # 生产环境：限制资源使用
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  app:
+    build: .
+    container_name: mastodon-news-app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info --workers 2
+    volumes:
+      # 生产环境：仅挂载日志目录，不挂载应用代码
+      - ./logs:/app/logs
+    ports:
+      # 生产环境：仅暴露应用端口（通常通过 Nginx 反向代理）
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-mastodon_news}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-mastodon_news}
+      - MASTODON_BASE_URL=${MASTODON_BASE_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - MASTODON_MAX_LENGTH=${MASTODON_MAX_LENGTH:-500}
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - mastodon_news_network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # 生产环境：限制资源使用
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+networks:
+  mastodon_news_network:
+    name: mastodon_news_network
+    driver: bridge
+    # 独立网络，避免与其他服务冲突
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  postgres_data:
+    name: mastodon_news_postgres_data
+

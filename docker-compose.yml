@@ -1,3 +1,18 @@
+# ============================================
+# Mastodon News Center - 本地开发环境配置
+# ============================================
+# 
+# 用途：本地开发和调试
+# 特点：
+#   - 数据库端口暴露到宿主机（方便本地工具连接）
+#   - 应用代码热重载（volume 挂载）
+#   - 日志文件挂载到宿主机
+#
+# 启动方式：
+#   docker compose up -d --build
+#
+# ============================================
+
 services:
   db:
     image: postgres:15-alpine
@@ -10,9 +25,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
+      # 开发环境：暴露数据库端口到宿主机（方便使用 pgAdmin、DBeaver 等工具）
       - "${POSTGRES_PORT:-5432}:5432"
     networks:
-      - mastodon_network
+      - mastodon_news_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mastodon_news} -d ${POSTGRES_DB:-mastodon_news}"]
       interval: 10s
@@ -25,6 +41,7 @@ services:
     container_name: mastodon-news-app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info
     volumes:
+      # 开发环境：挂载应用代码（支持热重载）
       - ./app:/app/app
       - ./logs:/app/logs
     ports:
@@ -34,12 +51,13 @@ services:
       - MASTODON_BASE_URL=${MASTODON_BASE_URL:-https://your-instance.com}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-123456}
+      - MASTODON_MAX_LENGTH=${MASTODON_MAX_LENGTH:-500}
       - PYTHONUNBUFFERED=1
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - mastodon_network
+      - mastodon_news_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
@@ -49,9 +67,12 @@ services:
       start_period: 40s
 
 networks:
-  mastodon_network:
+  mastodon_news_network:
+    name: mastodon_news_network
     driver: bridge
+    # 独立网络，避免与其他服务冲突
 
 volumes:
   postgres_data:
-
+    # 不指定 name，使用 Docker Compose 默认命名规则
+    # 会自动使用：mastodon-news-center_postgres_data（与现有数据卷匹配）

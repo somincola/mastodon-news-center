@@ -130,48 +130,197 @@ docker-compose ps
 
 ## 生产环境部署
 
-### 生产部署指南
+### 🚀 快速开始（生产环境）
 
-📚 **详细的生产环境部署文档请查看：[DEPLOYMENT.md](DEPLOYMENT.md)**
+生产环境使用独立的 `docker-compose.production.yml` 配置文件，**数据库端口不暴露到宿主机**，确保安全性。
 
-生产部署包括：
-- 服务器准备和配置
-- Docker 和 Docker Compose 安装
-- 环境变量配置
-- Nginx 反向代理配置
-- HTTPS/SSL 证书配置（Let's Encrypt）
-- 防火墙配置
-- 自动启动配置
-- 备份脚本配置
-- 监控和维护
-
-### 快速部署脚本
-
-项目提供了自动化部署脚本，可以快速完成基础部署：
+#### 1. 克隆项目
 
 ```bash
-# 在服务器上克隆项目后
+git clone <repository-url>
 cd mastodon-news-center
-sudo bash deploy.sh
 ```
 
-脚本会自动：
-- 安装 Docker 和 Docker Compose
-- 配置环境变量
-- 启动服务
-- 验证部署
+#### 2. 配置环境变量
 
-### Nginx 配置示例
+```bash
+# 复制环境变量示例文件
+cp .env.example .env
 
-项目提供了 Nginx 配置示例文件：`nginx.conf.example`
+# 编辑 .env 文件，设置生产环境配置
+nano .env  # 或使用你喜欢的编辑器
+```
 
-配置步骤：
-1. 复制配置文件：`cp nginx.conf.example /etc/nginx/sites-available/mastodon-news-center`
-2. 编辑配置文件，替换域名
-3. 启用配置：`ln -s /etc/nginx/sites-available/mastodon-news-center /etc/nginx/sites-enabled/`
-4. 测试配置：`nginx -t`
-5. 重载 Nginx：`systemctl reload nginx`
-6. 配置 HTTPS：`certbot --nginx -d your-domain.com`
+**⚠️ 生产环境必须修改的配置：**
+
+```env
+# 数据库密码（必须使用强密码！）
+POSTGRES_PASSWORD=你的强密码_至少16位
+
+# 管理员密码（必须修改！）
+ADMIN_PASSWORD=你的管理员密码
+
+# Mastodon 实例地址
+MASTODON_BASE_URL=https://your-instance.com
+
+# OpenAI API Key（如果使用 AI 摘要）
+OPENAI_API_KEY=sk-...
+```
+
+#### 3. 启动服务
+
+```bash
+# 使用生产环境配置启动
+docker compose -f docker-compose.production.yml up -d --build
+
+# 查看日志
+docker compose -f docker-compose.production.yml logs -f
+
+# 查看服务状态
+docker compose -f docker-compose.production.yml ps
+```
+
+#### 4. 验证部署
+
+```bash
+# 检查应用健康状态
+curl http://localhost:8000/
+
+# 检查数据库连接（从应用容器内）
+docker compose -f docker-compose.production.yml exec app python3 -c "from app.database import engine; print('Database connected!' if engine.connect() else 'Failed')"
+```
+
+### 🔒 安全特性
+
+生产环境配置包含以下安全措施：
+
+- ✅ **数据库端口不暴露**：PostgreSQL 仅通过 Docker 内部网络访问
+- ✅ **独立网络**：使用独立的 `mastodon_news_network`，避免与其他服务冲突
+- ✅ **资源限制**：配置了 CPU 和内存限制，防止资源耗尽
+- ✅ **健康检查**：自动监控服务健康状态
+- ✅ **自动重启**：服务异常时自动重启
+
+### 📋 生产环境 vs 开发环境
+
+| 特性 | 开发环境 (`docker-compose.yml`) | 生产环境 (`docker-compose.production.yml`) |
+|------|-------------------------------|-------------------------------------------|
+| 数据库端口 | ✅ 暴露到宿主机 (5432) | ❌ 不暴露，仅内部网络 |
+| 应用代码 | ✅ Volume 挂载（热重载） | ❌ 使用镜像内代码 |
+| 日志目录 | ✅ Volume 挂载 | ✅ Volume 挂载 |
+| 工作进程 | 1 个 | 2 个（--workers 2） |
+| 资源限制 | ❌ 无限制 | ✅ CPU/内存限制 |
+| 容器名称 | `*-dev` | 标准名称 |
+
+### 🌐 Nginx 反向代理配置
+
+生产环境建议使用 Nginx 作为反向代理，配置 HTTPS。
+
+#### 1. 安装 Nginx
+
+```bash
+# Ubuntu/Debian
+sudo apt update && sudo apt install -y nginx
+
+# CentOS/RHEL
+sudo yum install -y nginx
+```
+
+#### 2. 配置 Nginx
+
+项目提供了 Nginx 配置示例：`nginx.conf.example`
+
+```bash
+# 复制配置文件
+sudo cp nginx.conf.example /etc/nginx/sites-available/mastodon-news-center
+
+# 编辑配置文件，替换域名
+sudo nano /etc/nginx/sites-available/mastodon-news-center
+
+# 启用配置
+sudo ln -s /etc/nginx/sites-available/mastodon-news-center /etc/nginx/sites-enabled/
+
+# 测试配置
+sudo nginx -t
+
+# 重载 Nginx
+sudo systemctl reload nginx
+```
+
+#### 3. 配置 HTTPS（Let's Encrypt）
+
+```bash
+# 安装 Certbot
+sudo apt install -y certbot python3-certbot-nginx  # Ubuntu/Debian
+sudo yum install -y certbot python3-certbot-nginx  # CentOS/RHEL
+
+# 获取 SSL 证书
+sudo certbot --nginx -d your-domain.com
+
+# 自动续期测试
+sudo certbot renew --dry-run
+```
+
+### 🔥 防火墙配置
+
+```bash
+# 允许 HTTP/HTTPS
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+
+# 禁止直接访问应用端口（通过 Nginx 访问）
+sudo ufw deny 8000/tcp
+
+# 禁止数据库端口（生产环境不暴露）
+sudo ufw deny 5432/tcp
+
+# 启用防火墙
+sudo ufw enable
+```
+
+### 📚 详细部署文档
+
+📚 **完整的生产环境部署指南请查看：[DEPLOYMENT.md](DEPLOYMENT.md)**
+
+包括：
+- 服务器准备和系统配置
+- Docker 和 Docker Compose 安装
+- 环境变量详细配置
+- Nginx 反向代理完整配置
+- HTTPS/SSL 证书配置（Let's Encrypt）
+- 防火墙和安全配置
+- 自动启动配置（systemd）
+- 数据库备份脚本
+- 监控和维护指南
+
+### 🛠️ 常用命令（生产环境）
+
+```bash
+# 启动服务
+docker compose -f docker-compose.production.yml up -d
+
+# 停止服务
+docker compose -f docker-compose.production.yml down
+
+# 重启服务
+docker compose -f docker-compose.production.yml restart
+
+# 查看日志
+docker compose -f docker-compose.production.yml logs -f app
+docker compose -f docker-compose.production.yml logs -f db
+
+# 查看服务状态
+docker compose -f docker-compose.production.yml ps
+
+# 进入应用容器
+docker compose -f docker-compose.production.yml exec app bash
+
+# 备份数据库
+docker compose -f docker-compose.production.yml exec db pg_dump -U mastodon_news mastodon_news > backup.sql
+
+# 更新代码并重启
+git pull
+docker compose -f docker-compose.production.yml up -d --build
+```
 
 ## 本地开发
 

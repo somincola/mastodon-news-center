@@ -20,6 +20,13 @@ class Settings(BaseSettings):
     # Admin Authentication
     admin_password: str = os.getenv("ADMIN_PASSWORD", "123456")  # 管理员密码（默认: 123456）
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # 确保从环境变量读取 ADMIN_PASSWORD
+        env_password = os.getenv("ADMIN_PASSWORD")
+        if env_password:
+            self.admin_password = env_password
+    
     class Config:
         env_file = ".env"
         case_sensitive = False
